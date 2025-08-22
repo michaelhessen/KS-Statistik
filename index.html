@@ -1,0 +1,2400 @@
+
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KS statistik - LF Bergslagen</title>
+    
+    <!-- Ikoner och manifest -->
+    <link rel="icon" href="favicon.png">
+    <link rel="apple-touch-icon" href="icon-512.png">
+    <link rel="manifest" href="manifest.webmanifest">
+    
+    <!-- Chart.js från CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
+    
+    <style>
+        /* CSS-variabler för färgtema */
+        :root {
+            /* LF Bergslagen färger - ljust tema */
+            --color-primary: #0b5cab;
+            --color-primary-light: #1976d2;
+            --color-primary-dark: #0d47a1;
+            --color-accent: #d32f2f;
+            --color-accent-light: #f44336;
+            --color-success: #2e7d32;
+            --color-warning: #f57c00;
+            
+            /* Neutral färger - ljust tema */
+            --color-bg: #ffffff;
+            --color-bg-alt: #f5f7fa;
+            --color-surface: #ffffff;
+            --color-surface-alt: #f8f9fb;
+            --color-text: #1a1a1a;
+            --color-text-secondary: #666666;
+            --color-text-muted: #999999;
+            --color-border: #e0e4e7;
+            --color-border-light: #f0f2f5;
+            
+            /* Skuggor */
+            --shadow-small: 0 2px 4px rgba(0,0,0,0.1);
+            --shadow-medium: 0 4px 12px rgba(0,0,0,0.15);
+            --shadow-large: 0 8px 24px rgba(0,0,0,0.2);
+            
+            /* Övriga */
+            --radius: 12px;
+            --radius-small: 8px;
+            --transition: all 0.3s ease;
+        }
+        
+        [data-theme="dark"] {
+            /* LF Bergslagen färger - mörkt tema */
+            --color-primary: #4a90e2;
+            --color-primary-light: #64b5f6;
+            --color-primary-dark: #1976d2;
+            --color-accent: #ef5350;
+            --color-accent-light: #ff5722;
+            --color-success: #4caf50;
+            --color-warning: #ff9800;
+            
+            /* Neutral färger - mörkt tema */
+            --color-bg: #121212;
+            --color-bg-alt: #1a1a1a;
+            --color-surface: #1e1e1e;
+            --color-surface-alt: #2a2a2a;
+            --color-text: #ffffff;
+            --color-text-secondary: #cccccc;
+            --color-text-muted: #999999;
+            --color-border: #333333;
+            --color-border-light: #444444;
+            
+            /* Skuggor för mörkt tema */
+            --shadow-small: 0 2px 4px rgba(0,0,0,0.3);
+            --shadow-medium: 0 4px 12px rgba(0,0,0,0.4);
+            --shadow-large: 0 8px 24px rgba(0,0,0,0.5);
+        }
+        
+        /* Auto tema-detection */
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                /* Samma som [data-theme="dark"] ovan */
+                --color-primary: #4a90e2;
+                --color-primary-light: #64b5f6;
+                --color-primary-dark: #1976d2;
+                --color-accent: #ef5350;
+                --color-accent-light: #ff5722;
+                --color-success: #4caf50;
+                --color-warning: #ff9800;
+                --color-bg: #121212;
+                --color-bg-alt: #1a1a1a;
+                --color-surface: #1e1e1e;
+                --color-surface-alt: #2a2a2a;
+                --color-text: #ffffff;
+                --color-text-secondary: #cccccc;
+                --color-text-muted: #999999;
+                --color-border: #333333;
+                --color-border-light: #444444;
+                --shadow-small: 0 2px 4px rgba(0,0,0,0.3);
+                --shadow-medium: 0 4px 12px rgba(0,0,0,0.4);
+                --shadow-large: 0 8px 24px rgba(0,0,0,0.5);
+            }
+        }
+        
+        /* Reset och bas-stilar */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.6;
+            min-height: 100vh;
+            transition: var(--transition);
+        }
+        
+        /* Header */
+        .header {
+            background: var(--color-surface);
+            border-bottom: 1px solid var(--color-border);
+            box-shadow: var(--shadow-small);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 1rem 0;
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1rem;
+        }
+        
+        .logo-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .logo {
+            height: 40px;
+            width: auto;
+        }
+        
+        .title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--color-primary);
+            margin: 0;
+        }
+        
+        .theme-toggle {
+            background: var(--color-bg-alt);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-small);
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--color-text);
+            font-size: 1.2rem;
+        }
+        
+        .theme-toggle:hover {
+            background: var(--color-primary);
+            color: white;
+        }
+        
+        /* Navigation tabs */
+        .nav-tabs {
+            background: var(--color-surface);
+            border-bottom: 1px solid var(--color-border);
+            position: sticky;
+            top: 73px;
+            z-index: 99;
+        }
+        
+        .nav-tabs-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            padding: 0 1rem;
+        }
+        
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--color-text-secondary);
+            border-bottom: 3px solid transparent;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+        
+        .tab-button.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+            font-weight: 600;
+        }
+        
+        .tab-button:hover:not(.active) {
+            color: var(--color-text);
+            background: var(--color-bg-alt);
+        }
+        
+        /* Huvudlayout */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Kort-komponenter */
+        .card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-small);
+            margin-bottom: 1.5rem;
+            transition: var(--transition);
+        }
+        
+        .card:hover {
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--color-primary);
+        }
+        
+        /* Form-element */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--color-text);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-small);
+            background: var(--color-bg);
+            color: var(--color-text);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(11, 92, 171, 0.1);
+        }
+        
+        /* Radio buttons och checkboxes */
+        .radio-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+        
+        .radio-item input[type="radio"] {
+            margin: 0;
+        }
+        
+        /* Knappar */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--radius-small);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            justify-content: center;
+        }
+        
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--color-primary-dark);
+        }
+        
+        .btn-secondary {
+            background: var(--color-bg-alt);
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--color-surface-alt);
+        }
+        
+        .btn-success {
+            background: var(--color-success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #1b5e20;
+        }
+        
+        .btn-danger {
+            background: var(--color-accent);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c62828;
+        }
+        
+        /* Stjärnbetyg */
+        .star-rating {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .star {
+            font-size: 1.5rem;
+            color: var(--color-border);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .star.filled {
+            color: var(--color-warning);
+        }
+        
+        .star:hover {
+            color: var(--color-warning);
+        }
+        
+        /* Toggle switch */
+        .toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: var(--color-border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .toggle-switch.active {
+            background: var(--color-primary);
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+        
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(26px);
+        }
+        
+        /* Säljmål knappar */
+        .sales-section {
+            display: grid;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .sales-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            background: var(--color-surface-alt);
+            border-radius: var(--radius);
+            border: 1px solid var(--color-border);
+        }
+        
+        .sales-info {
+            flex: 1;
+        }
+        
+        .sales-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .sales-count {
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .sales-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .add-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .add-btn:hover {
+            background: var(--color-primary-dark);
+            transform: scale(1.05);
+        }
+        
+        /* Progress bars */
+        .progress {
+            width: 100%;
+            height: 8px;
+            background: var(--color-border);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: var(--color-success);
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+        }
+        
+        /* Tabell */
+        .table-container {
+            overflow-x: auto;
+            border-radius: var(--radius);
+            border: 1px solid var(--color-border);
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--color-surface);
+        }
+        
+        .table th,
+        .table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--color-border);
+        }
+        
+        .table th {
+            background: var(--color-surface-alt);
+            font-weight: 600;
+            color: var(--color-text);
+        }
+        
+        .table tr:hover {
+            background: var(--color-bg-alt);
+        }
+        
+        /* Filter panel */
+        .filter-panel {
+            background: var(--color-surface-alt);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--color-border);
+        }
+        
+        .filter-row {
+            display: grid;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+        
+        /* Grafcontainer */
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 2rem;
+        }
+        
+        .chart-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        /* Toast meddelanden */
+        .toast {
+            position: fixed;
+            top: 100px;
+            right: 1rem;
+            background: var(--color-success);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-small);
+            box-shadow: var(--shadow-medium);
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .toast.show {
+            transform: translateX(0);
+        }
+        
+        .toast.error {
+            background: var(--color-accent);
+        }
+        
+        /* Responsiv design */
+        @media (max-width: 768px) {
+            .header-content {
+                padding: 0 0.5rem;
+            }
+            
+            .logo-title {
+                gap: 0.5rem;
+            }
+            
+            .title {
+                font-size: 1.25rem;
+            }
+            
+            .nav-tabs-content {
+                padding: 0 0.5rem;
+                overflow-x: auto;
+            }
+            
+            .tab-button {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+            }
+            
+            .main-content {
+                padding: 1rem 0.5rem;
+            }
+            
+            .card {
+                padding: 1rem;
+            }
+            
+            .filter-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-container {
+                height: 300px;
+            }
+            
+            .sales-item {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+            
+            .sales-actions {
+                justify-content: center;
+            }
+        }
+        
+        /* Färgtaggar */
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .tag-digitala {
+            background: rgba(46, 125, 50, 0.1);
+            color: var(--color-success);
+            border: 1px solid var(--color-success);
+        }
+        
+        .tag-tid-utanfor {
+            background: rgba(211, 47, 47, 0.1);
+            color: var(--color-accent);
+            border: 1px solid var(--color-accent);
+        }
+        
+        .tag-kanal {
+            background: rgba(11, 92, 171, 0.1);
+            color: var(--color-primary);
+            border: 1px solid var(--color-primary);
+        }
+        
+        /* Hjälpklasser */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .mb-1 { margin-bottom: 0.5rem; }
+        .mb-2 { margin-bottom: 1rem; }
+        .mt-2 { margin-top: 1rem; }
+        .hidden { display: none !important; }
+        .flex { display: flex; }
+        .flex-wrap { flex-wrap: wrap; }
+        .gap-1 { gap: 0.5rem; }
+        .gap-2 { gap: 1rem; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        
+        /* Fokus-stilar för tillgänglighet */
+        *:focus {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+        
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header med logo och tema-toggle -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-title">
+                <img src="logo.png" alt="LF Bergslagen" class="logo">
+                <h1 class="title">KS statistik</h1>
+            </div>
+            <button class="theme-toggle" id="themeToggle" aria-label="Växla mellan ljust och mörkt tema">
+                🌙
+            </button>
+        </div>
+    </header>
+
+    <!-- Navigation tabs -->
+    <nav class="nav-tabs">
+        <div class="nav-tabs-content">
+            <button class="tab-button active" data-tab="samtal" id="tab-samtal">Samtal</button>
+            <button class="tab-button" data-tab="saljmal" id="tab-saljmal">Säljmål</button>
+            <button class="tab-button" data-tab="statistik" id="tab-statistik">Statistik</button>
+            <button class="tab-button" data-tab="installningar" id="tab-installningar">Inställningar</button>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <!-- Flik 1: Samtal -->
+        <div id="content-samtal" class="tab-content active">
+            <div class="card">
+                <h2 class="card-title">Logga samtal</h2>
+                <form id="callForm">
+                    <!-- Typ -->
+                    <div class="form-group">
+                        <label class="form-label">Typ av samtal</label>
+                        <div class="radio-group">
+                            <label class="radio-item">
+                                <input type="radio" name="typ" value="Telefonsamtal" checked>
+                                <span>Telefonsamtal</span>
+                            </label>
+                            <label class="radio-item">
+                                <input type="radio" name="typ" value="KF">
+                                <span>KF</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Kategori (visas bara för Telefonsamtal) -->
+                    <div class="form-group" id="kategoriGroup">
+                        <label for="kategori" class="form-label">Kategori</label>
+                        <select id="kategori" name="kategori" class="form-control">
+                            <option value="">Välj kategori...</option>
+                            <option value="Guldkund">Guldkund</option>
+                            <option value="Bankärende">Bankärende</option>
+                        </select>
+                    </div>
+
+                    <!-- Stjärnbetyg -->
+                    <div class="form-group">
+                        <label class="form-label">Upplevelse av samtalet (generellt)</label>
+                        <div class="star-rating" data-rating="stjarna_generellt">
+                            <span class="star" data-value="1">★</span>
+                            <span class="star" data-value="2">★</span>
+                            <span class="star" data-value="3">★</span>
+                            <span class="star" data-value="4">★</span>
+                            <span class="star" data-value="5">★</span>
+                        </div>
+                        <input type="hidden" name="stjarna_generellt" id="stjarna_generellt">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Kundens bemötande</label>
+                        <div class="star-rating" data-rating="stjarna_kund">
+                            <span class="star" data-value="1">★</span>
+                            <span class="star" data-value="2">★</span>
+                            <span class="star" data-value="3">★</span>
+                            <span class="star" data-value="4">★</span>
+                            <span class="star" data-value="5">★</span>
+                        </div>
+                        <input type="hidden" name="stjarna_kund" id="stjarna_kund">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Min insats</label>
+                        <div class="star-rating" data-rating="stjarna_insats">
+                            <span class="star" data-value="1">★</span>
+                            <span class="star" data-value="2">★</span>
+                            <span class="star" data-value="3">★</span>
+                            <span class="star" data-value="4">★</span>
+                            <span class="star" data-value="5">★</span>
+                        </div>
+                        <input type="hidden" name="stjarna_insats" id="stjarna_insats">
+                    </div>
+
+                    <!-- Fritextrutor -->
+                    <div class="form-group">
+                        <label for="vadGickBra" class="form-label">Vad gick bra?</label>
+                        <textarea id="vadGickBra" name="vad_gick_bra" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="forbattra" class="form-label">Vad kan jag göra bättre nästa gång?</label>
+                        <textarea id="forbattra" name="forbattra" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <!-- Samtalstid -->
+                    <div class="form-group">
+                        <label for="samtalstid" class="form-label">Samtalstid (minuter)</label>
+                        <input type="number" id="samtalstid" name="samtalstid_min" class="form-control" min="1">
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button type="submit" class="btn btn-primary">Spara samtal</button>
+                        <button type="button" class="btn btn-secondary" id="undoLastCall">Ångra senaste</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Lista över senaste samtal -->
+            <div class="card">
+                <h2 class="card-title">Senaste samtal</h2>
+                <div class="form-group">
+                    <input type="text" id="callSearch" class="form-control" placeholder="Sök i samtal...">
+                </div>
+                <div id="recentCalls"></div>
+            </div>
+        </div>
+
+        <!-- Flik 2: Säljmål -->
+        <div id="content-saljmal" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">Säljmål - snabb loggning</h2>
+                
+                <!-- Säkra meddelanden -->
+                <div class="sales-item">
+                    <div class="sales-info">
+                        <div class="sales-title">Säkra meddelanden</div>
+                        <div class="sales-count" id="sakraMeddelandenCount">Idag: 0</div>
+                        <div class="toggle" id="sakraMeddelandenToggle">
+                            <span id="toggleLabel">Tid utanför digitala</span>
+                            <div class="toggle-switch" id="digitalToggleSwitch">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sales-actions">
+                        <button class="add-btn" id="addSakraMeddelanden" aria-label="Lägg till säkra meddelanden">+</button>
+                    </div>
+                </div>
+
+                <!-- Informationsfullmakt -->
+                <div class="sales-item">
+                    <div class="sales-info">
+                        <div class="sales-title">Informationsfullmakt</div>
+                        <div class="sales-count" id="informationsfullmaktCount">Idag: 0</div>
+                    </div>
+                    <div class="sales-actions">
+                        <button class="add-btn" id="addInformationsfullmakt" aria-label="Lägg till informationsfullmakt">+</button>
+                    </div>
+                </div>
+
+                <!-- Gula rutan -->
+                <div class="sales-item">
+                    <div class="sales-info">
+                        <div class="sales-title">Gula rutan</div>
+                        <div class="sales-count" id="gulaRutanCount">Idag: 0</div>
+                    </div>
+                    <div class="sales-actions">
+                        <button class="add-btn" id="addGulaRutan" aria-label="Lägg till gula rutan">+</button>
+                    </div>
+                </div>
+
+                <!-- Bolån -->
+                <div class="sales-item">
+                    <div class="sales-info">
+                        <div class="sales-title">Bolån</div>
+                        <div class="sales-count" id="bolanCount">Idag: 0</div>
+                        <div class="form-group">
+                            <select id="bolanKanal" class="form-control">
+                                <option value="">Välj kanal...</option>
+                                <option value="Säkra meddelanden">Säkra meddelanden</option>
+                                <option value="Telefonsamtal inringning">Telefonsamtal inringning</option>
+                                <option value="Telefonsamtal utringning">Telefonsamtal utringning</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="sales-actions">
+                        <button class="add-btn" id="addBolan" aria-label="Lägg till bolån">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Målhantering -->
+            <div class="card">
+                <h2 class="card-title">Målhantering</h2>
+                <div class="form-group">
+                    <label for="goalPeriod" class="form-label">Tidsperiod för mål</label>
+                    <select id="goalPeriod" class="form-control">
+                        <option value="pass">Pass (arbetsdag)</option>
+                        <option value="vecka">Vecka</option>
+                        <option value="manad">Månad</option>
+                        <option value="kvartal">Kvartal</option>
+                        <option value="ar">År</option>
+                    </select>
+                </div>
+                <div id="goalSettings"></div>
+            </div>
+        </div>
+
+        <!-- Flik 3: Statistik -->
+        <div id="content-statistik" class="tab-content">
+            <!-- Filter panel -->
+            <div class="filter-panel">
+                <h3 class="mb-2">Filter och inställningar</h3>
+                <div class="filter-row">
+                    <div class="form-group">
+                        <label for="timeRange" class="form-label">Tidsomfång</label>
+                        <select id="timeRange" class="form-control">
+                            <option value="idag">Idag</option>
+                            <option value="vecka">Denna vecka</option>
+                            <option value="manad">Denna månad</option>
+                            <option value="ar">Detta år</option>
+                            <option value="anpassat">Anpassat datumintervall</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="granularity" class="form-label">Granularitet</label>
+                        <select id="granularity" class="form-control">
+                            <option value="timme">Timme</option>
+                            <option value="pass">Pass</option>
+                            <option value="dag">Dag</option>
+                            <option value="vecka">Vecka</option>
+                            <option value="manad">Månad</option>
+                            <option value="kvartal">Kvartal</option>
+                            <option value="ar">År</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sakraFilter" class="form-label">Säkra meddelanden</label>
+                        <select id="sakraFilter" class="form-control">
+                            <option value="alla">Alla</option>
+                            <option value="digitala">Digitala</option>
+                            <option value="tid-utanfor">Tid utanför digitala</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="bolanFilter" class="form-label">Bolån kanal</label>
+                        <select id="bolanFilter" class="form-control">
+                            <option value="alla">Alla kanaler</option>
+                            <option value="Säkra meddelanden">Säkra meddelanden</option>
+                            <option value="Telefonsamtal inringning">Telefonsamtal inringning</option>
+                            <option value="Telefonsamtal utringning">Telefonsamtal utringning</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-row" id="customDateRange" style="display: none;">
+                    <div class="form-group">
+                        <label for="startDate" class="form-label">Startdatum</label>
+                        <input type="date" id="startDate" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="endDate" class="form-label">Slutdatum</label>
+                        <input type="date" id="endDate" class="form-control">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Målprogress -->
+            <div class="card">
+                <h2 class="card-title">Målprogress</h2>
+                <div id="goalProgress"></div>
+            </div>
+
+            <!-- Grafer -->
+            <div class="card">
+                <div class="chart-controls">
+                    <h2 class="card-title">Statistikgrafer</h2>
+                    <div class="flex gap-1">
+                        <button class="btn btn-secondary" id="chartTypeLine">Linje</button>
+                        <button class="btn btn-secondary" id="chartTypeBar">Kolumn</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Tabellvy -->
+            <div class="card">
+                <div class="chart-controls">
+                    <h2 class="card-title">Tabelldata</h2>
+                    <button class="btn btn-secondary" id="exportTable">Exportera tabell</button>
+                </div>
+                <div class="table-container">
+                    <table class="table" id="statsTable">
+                        <thead id="statsTableHead"></thead>
+                        <tbody id="statsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Import/Export -->
+            <div class="card">
+                <h2 class="card-title">Data hantering</h2>
+                <div class="flex gap-2">
+                    <button class="btn btn-primary" id="exportData">Exportera all data</button>
+                    <label class="btn btn-secondary">
+                        Importera data
+                        <input type="file" id="importData" accept=".json" style="display: none;">
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flik 4: Inställningar -->
+        <div id="content-installningar" class="tab-content">
+            <!-- Exempeldata -->
+            <div class="card">
+                <h2 class="card-title">Exempeldata</h2>
+                <p class="mb-2">Populera applikationen med realistisk testdata för demonstration.</p>
+                <button class="btn btn-success" id="populateExampleData">
+                    📊 Populera med exempeldata
+                </button>
+            </div>
+
+            <!-- Datahantering -->
+            <div class="card">
+                <h2 class="card-title">⚠️ Radera all data</h2>
+                <p class="mb-2" style="color: var(--color-accent);">
+                    <strong>Varning:</strong> Detta kommer permanent radera all sparad data (samtal, säljmål, statistik och mål).
+                    Denna åtgärd kan inte ångras.
+                </p>
+                
+                <div class="form-group">
+                    <label for="confirmDelete" class="form-label">
+                        Skriv "RADERA" för att bekräfta borttagning:
+                    </label>
+                    <input 
+                        type="text" 
+                        id="confirmDelete" 
+                        class="form-control" 
+                        placeholder="Skriv RADERA här..."
+                        autocomplete="off"
+                    >
+                </div>
+                
+                <button class="btn btn-danger" id="deleteAllData" disabled>
+                    🗑️ Radera all data permanent
+                </button>
+            </div>
+
+            <!-- App-information -->
+            <div class="card">
+                <h2 class="card-title">Om applikationen</h2>
+                <div class="grid-2">
+                    <div>
+                        <strong>Version:</strong> 2.0
+                    </div>
+                    <div>
+                        <strong>Uppdaterad:</strong> December 2024
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <strong>Ny funktionalitet:</strong>
+                    <ul style="margin-top: 0.5rem; padding-left: 1.5rem;">
+                        <li>Förbättrad målprogress som anpassar sig efter tidsomfång</li>
+                        <li>Reaktiva statistikgrafer och tabeller</li>
+                        <li>Förbättrad datafiltrering</li>
+                        <li>Exempeldatafunktion</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast container -->
+    <div id="toastContainer"></div>
+
+    <script type="module">
+        // ====================
+        // GLOBALA VARIABLER OCH KONFIGURATION
+        // ====================
+        
+        let currentTab = 'samtal';
+        let currentChart = null;
+        let digitalToggleState = false; // false = "Tid utanför digitala", true = "Digitala"
+        
+        // Standardmål per pass (arbetsdag)
+        const DEFAULT_GOALS = {
+            pass: {
+                'Säkra meddelanden': 20,
+                'Informationsfullmakt': 2,
+                'Gula rutan': 5,
+                'Bolån': 1
+            },
+            vecka: {
+                'Säkra meddelanden': 100,
+                'Informationsfullmakt': 10,
+                'Gula rutan': 25,
+                'Bolån': 5
+            },
+            manad: {
+                'Säkra meddelanden': 400,
+                'Informationsfullmakt': 40,
+                'Gula rutan': 100,
+                'Bolån': 20
+            },
+            kvartal: {
+                'Säkra meddelanden': 1200,
+                'Informationsfullmakt': 120,
+                'Gula rutan': 300,
+                'Bolån': 60
+            },
+            ar: {
+                'Säkra meddelanden': 4800,
+                'Informationsfullmakt': 480,
+                'Gula rutan': 1200,
+                'Bolån': 240
+            }
+        };
+        
+        // ====================
+        // HJÄLPFUNKTIONER FÖR DATAHANTERING
+        // ====================
+        
+        // Generera UUID för unika ID:n
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+        
+        // Hämta data från localStorage med fallback till tom array
+        function getLocalStorage(key, defaultValue = []) {
+            try {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : defaultValue;
+            } catch (error) {
+                console.error(`Fel vid hämtning av ${key}:`, error);
+                return defaultValue;
+            }
+        }
+        
+        // Spara data till localStorage
+        function setLocalStorage(key, data) {
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+            } catch (error) {
+                console.error(`Fel vid sparning av ${key}:`, error);
+                showToast('Fel vid sparning av data', 'error');
+            }
+        }
+        
+        // Formatera datum och tid
+        function formatDateTime(timestamp) {
+            const date = new Date(timestamp);
+            return {
+                date: date.toLocaleDateString('sv-SE'),
+                time: date.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
+                full: date.toLocaleString('sv-SE')
+            };
+        }
+        
+        // Visa toast-meddelanden
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            
+            const container = document.getElementById('toastContainer');
+            container.appendChild(toast);
+            
+            // Visa toast
+            setTimeout(() => toast.classList.add('show'), 100);
+            
+            // Ta bort toast efter 3 sekunder
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => container.removeChild(toast), 300);
+            }, 3000);
+        }
+        
+        // ====================
+        // TEMA-HANTERING
+        // ====================
+        
+        function initTheme() {
+            const savedTheme = localStorage.getItem('ksTheme');
+            const themeToggle = document.getElementById('themeToggle');
+            
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                updateThemeIcon(savedTheme);
+            }
+            
+            themeToggle.addEventListener('click', toggleTheme);
+        }
+        
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('ksTheme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+        
+        function updateThemeIcon(theme) {
+            const themeToggle = document.getElementById('themeToggle');
+            themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+        
+        // ====================
+        // FLIK-NAVIGATION
+        // ====================
+        
+        function initTabs() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetTab = button.getAttribute('data-tab');
+                    
+                    // Uppdatera aktiva tillstånd
+                    tabButtons.forEach(b => b.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    
+                    button.classList.add('active');
+                    document.getElementById(`content-${targetTab}`).classList.add('active');
+                    
+                    currentTab = targetTab;
+                    
+                    // Uppdatera specifikt flikinnehåll
+                    if (targetTab === 'saljmal') {
+                        updateSalesCounters();
+                    } else if (targetTab === 'statistik') {
+                        updateStatistics();
+                    } else if (targetTab === 'samtal') {
+                        updateRecentCalls();
+                    } else if (targetTab === 'installningar') {
+                        // Inställningar-fliken kräver ingen specifik uppdatering
+                        console.log('Inställningar-flik aktiverad');
+                    }
+                });
+            });
+        }
+        
+        // ====================
+        // STJÄRNBETYG-HANTERING
+        // ====================
+        
+        function initStarRatings() {
+            const starRatings = document.querySelectorAll('.star-rating');
+            
+            starRatings.forEach(rating => {
+                const stars = rating.querySelectorAll('.star');
+                const ratingName = rating.getAttribute('data-rating');
+                const hiddenInput = document.getElementById(ratingName);
+                
+                stars.forEach((star, index) => {
+                    star.addEventListener('click', () => {
+                        const value = index + 1;
+                        hiddenInput.value = value;
+                        updateStars(stars, value);
+                    });
+                    
+                    star.addEventListener('mouseover', () => {
+                        updateStars(stars, index + 1, true);
+                    });
+                });
+                
+                rating.addEventListener('mouseleave', () => {
+                    const currentValue = parseInt(hiddenInput.value) || 0;
+                    updateStars(stars, currentValue);
+                });
+            });
+        }
+        
+        function updateStars(stars, value, isHover = false) {
+            stars.forEach((star, index) => {
+                if (index < value) {
+                    star.classList.add('filled');
+                } else {
+                    star.classList.remove('filled');
+                }
+            });
+        }
+        
+        // ====================
+        // SAMTAL-HANTERING
+        // ====================
+        
+        function initCallForm() {
+            const callForm = document.getElementById('callForm');
+            const typInputs = document.querySelectorAll('input[name="typ"]');
+            const kategoriGroup = document.getElementById('kategoriGroup');
+            const undoButton = document.getElementById('undoLastCall');
+            const searchInput = document.getElementById('callSearch');
+            
+            // Visa/dölj kategori beroende på typ
+            typInputs.forEach(input => {
+                input.addEventListener('change', (e) => {
+                    if (e.target.value === 'Telefonsamtal') {
+                        kategoriGroup.style.display = 'block';
+                    } else {
+                        kategoriGroup.style.display = 'none';
+                        document.getElementById('kategori').value = '';
+                    }
+                });
+            });
+            
+            // Hantera formulärinlämning
+            callForm.addEventListener('submit', handleCallSubmit);
+            
+            // Ångra senaste samtal
+            undoButton.addEventListener('click', undoLastCall);
+            
+            // Sök i samtal
+            searchInput.addEventListener('input', updateRecentCalls);
+            
+            // Initial uppdatering
+            updateRecentCalls();
+        }
+        
+        function handleCallSubmit(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const callData = {
+                id: generateUUID(),
+                typ: formData.get('typ'),
+                kategori: formData.get('kategori') || null,
+                stjarna_generellt: parseInt(formData.get('stjarna_generellt')) || null,
+                stjarna_kund: parseInt(formData.get('stjarna_kund')) || null,
+                stjarna_insats: parseInt(formData.get('stjarna_insats')) || null,
+                vad_gick_bra: formData.get('vad_gick_bra') || '',
+                forbattra: formData.get('forbattra') || '',
+                samtalstid_min: formData.get('samtalstid_min') ? parseInt(formData.get('samtalstid_min')) : null,
+                timestamp: new Date().toISOString()
+            };
+            
+            // Validering
+            if (!callData.stjarna_generellt || !callData.stjarna_kund || !callData.stjarna_insats) {
+                showToast('Alla stjärnbetyg måste sättas', 'error');
+                return;
+            }
+            
+            if (callData.typ === 'Telefonsamtal' && !callData.kategori) {
+                showToast('Kategori måste väljas för telefonsamtal', 'error');
+                return;
+            }
+            
+            // Spara samtal
+            const calls = getLocalStorage('ksCalls', []);
+            calls.push(callData);
+            setLocalStorage('ksCalls', calls);
+            
+            showToast('Samtalet har sparats');
+            
+            // Återställ formulär
+            e.target.reset();
+            resetStarRatings();
+            
+            // Uppdatera lista
+            updateRecentCalls();
+            
+            // Uppdatera räknare om vi är på säljmål-fliken
+            if (currentTab === 'saljmal') {
+                updateSalesCounters();
+            }
+        }
+        
+        function resetStarRatings() {
+            const hiddenInputs = document.querySelectorAll('input[type="hidden"][id^="stjarna_"]');
+            hiddenInputs.forEach(input => {
+                input.value = '';
+            });
+            
+            const stars = document.querySelectorAll('.star');
+            stars.forEach(star => star.classList.remove('filled'));
+        }
+        
+        function undoLastCall() {
+            const calls = getLocalStorage('ksCalls', []);
+            if (calls.length === 0) {
+                showToast('Inga samtal att ångra', 'error');
+                return;
+            }
+            
+            calls.pop();
+            setLocalStorage('ksCalls', calls);
+            showToast('Senaste samtalet har tagits bort');
+            updateRecentCalls();
+            
+            if (currentTab === 'saljmal') {
+                updateSalesCounters();
+            }
+        }
+        
+        function updateRecentCalls() {
+            const calls = getLocalStorage('ksCalls', []);
+            const searchTerm = document.getElementById('callSearch').value.toLowerCase();
+            const container = document.getElementById('recentCalls');
+            
+            // Filtrera och sortera samtal
+            const filteredCalls = calls
+                .filter(call => {
+                    if (!searchTerm) return true;
+                    return call.vad_gick_bra.toLowerCase().includes(searchTerm) ||
+                           call.forbattra.toLowerCase().includes(searchTerm) ||
+                           call.typ.toLowerCase().includes(searchTerm) ||
+                           (call.kategori && call.kategori.toLowerCase().includes(searchTerm));
+                })
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                .slice(0, 10); // Visa bara de 10 senaste
+            
+            if (filteredCalls.length === 0) {
+                container.innerHTML = '<p class="text-center">Inga samtal hittades.</p>';
+                return;
+            }
+            
+            const html = filteredCalls.map(call => {
+                const dateTime = formatDateTime(call.timestamp);
+                const stars = (rating) => '★'.repeat(rating || 0) + '☆'.repeat(5 - (rating || 0));
+                
+                return `
+                    <div class="card" style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                            <div>
+                                <strong>${call.typ}</strong>
+                                ${call.kategori ? `<span class="tag tag-kanal">${call.kategori}</span>` : ''}
+                            </div>
+                            <small style="color: var(--color-text-muted);">${dateTime.full}</small>
+                        </div>
+                        <div class="grid-2" style="margin-bottom: 0.5rem;">
+                            <div><small>Generellt: ${stars(call.stjarna_generellt)}</small></div>
+                            <div><small>Kund: ${stars(call.stjarna_kund)}</small></div>
+                        </div>
+                        <div style="margin-bottom: 0.5rem;">
+                            <small>Min insats: ${stars(call.stjarna_insats)}</small>
+                            ${call.samtalstid_min ? `<small style="float: right;">${call.samtalstid_min} min</small>` : ''}
+                        </div>
+                        ${call.vad_gick_bra ? `<div style="margin-bottom: 0.25rem;"><small><strong>Bra:</strong> ${call.vad_gick_bra}</small></div>` : ''}
+                        ${call.forbattra ? `<div><small><strong>Förbättra:</strong> ${call.forbattra}</small></div>` : ''}
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+        
+        // ====================
+        // SÄLJMÅL-HANTERING
+        // ====================
+        
+        function initSalesGoals() {
+            // Digital toggle för säkra meddelanden
+            const digitalToggle = document.getElementById('digitalToggleSwitch');
+            const toggleLabel = document.getElementById('toggleLabel');
+            
+            digitalToggle.addEventListener('click', () => {
+                digitalToggleState = !digitalToggleState;
+                digitalToggle.classList.toggle('active', digitalToggleState);
+                toggleLabel.textContent = digitalToggleState ? 'Digitala' : 'Tid utanför digitala';
+            });
+            
+            // Lägg till-knappar
+            document.getElementById('addSakraMeddelanden').addEventListener('click', () => {
+                addSalesEntry('Säkra meddelanden', digitalToggleState ? 'Digitala' : 'Tid utanför digitala');
+            });
+            
+            document.getElementById('addInformationsfullmakt').addEventListener('click', () => {
+                addSalesEntry('Informationsfullmakt');
+            });
+            
+            document.getElementById('addGulaRutan').addEventListener('click', () => {
+                addSalesEntry('Gula rutan');
+            });
+            
+            document.getElementById('addBolan').addEventListener('click', () => {
+                const kanal = document.getElementById('bolanKanal').value;
+                if (!kanal) {
+                    showToast('Välj kanal för bolån', 'error');
+                    return;
+                }
+                addSalesEntry('Bolån', null, kanal);
+                document.getElementById('bolanKanal').value = '';
+            });
+            
+            // Målhantering
+            const goalPeriod = document.getElementById('goalPeriod');
+            goalPeriod.addEventListener('change', updateGoalSettings);
+            
+            // Initial uppdatering
+            updateSalesCounters();
+            updateGoalSettings();
+        }
+        
+        function addSalesEntry(typ, tagg = null, kanal = null) {
+            const salesEntry = {
+                id: generateUUID(),
+                typ: typ,
+                tagg: tagg,
+                kanal: kanal,
+                timestamp: new Date().toISOString()
+            };
+            
+            const sales = getLocalStorage('ksSales', []);
+            sales.push(salesEntry);
+            setLocalStorage('ksSales', sales);
+            
+            showToast(`${typ} har loggats`);
+            updateSalesCounters();
+        }
+        
+        function updateSalesCounters() {
+            const sales = getLocalStorage('ksSales', []);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const todayISO = today.toISOString();
+            
+            // Filtrera dagens försäljning
+            const todaySales = sales.filter(sale => {
+                const saleDate = new Date(sale.timestamp);
+                saleDate.setHours(0, 0, 0, 0);
+                return saleDate.toISOString() === todayISO;
+            });
+            
+            // Räkna varje typ
+            const counts = {
+                'Säkra meddelanden': todaySales.filter(s => s.typ === 'Säkra meddelanden').length,
+                'Informationsfullmakt': todaySales.filter(s => s.typ === 'Informationsfullmakt').length,
+                'Gula rutan': todaySales.filter(s => s.typ === 'Gula rutan').length,
+                'Bolån': todaySales.filter(s => s.typ === 'Bolån').length
+            };
+            
+            // Uppdatera UI
+            document.getElementById('sakraMeddelandenCount').textContent = `Idag: ${counts['Säkra meddelanden']}`;
+            document.getElementById('informationsfullmaktCount').textContent = `Idag: ${counts['Informationsfullmakt']}`;
+            document.getElementById('gulaRutanCount').textContent = `Idag: ${counts['Gula rutan']}`;
+            document.getElementById('bolanCount').textContent = `Idag: ${counts['Bolån']}`;
+        }
+        
+        function updateGoalSettings() {
+            const period = document.getElementById('goalPeriod').value;
+            const container = document.getElementById('goalSettings');
+            const goals = getLocalStorage('ksGoals', DEFAULT_GOALS);
+            
+            if (!goals[period]) {
+                goals[period] = {...DEFAULT_GOALS[period]};
+                setLocalStorage('ksGoals', goals);
+            }
+            
+            const goalTypes = ['Säkra meddelanden', 'Informationsfullmakt', 'Gula rutan', 'Bolån'];
+            
+            const html = goalTypes.map(type => {
+                const currentGoal = goals[period][type] || DEFAULT_GOALS[period][type];
+                return `
+                    <div class="form-group">
+                        <label for="goal-${type}" class="form-label">${type}</label>
+                        <input 
+                            type="number" 
+                            id="goal-${type}" 
+                            class="form-control" 
+                            value="${currentGoal}"
+                            min="0"
+                            data-type="${type}"
+                            data-period="${period}"
+                        >
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
+            
+            // Lägg till event listeners för måluppdateringar
+            container.querySelectorAll('input').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const type = e.target.getAttribute('data-type');
+                    const period = e.target.getAttribute('data-period');
+                    const value = parseInt(e.target.value) || 0;
+                    
+                    const goals = getLocalStorage('ksGoals', DEFAULT_GOALS);
+                    if (!goals[period]) goals[period] = {};
+                    goals[period][type] = value;
+                    setLocalStorage('ksGoals', goals);
+                    
+                    showToast(`Mål för ${type} uppdaterat`);
+                });
+            });
+        }
+        
+        // ====================
+        // STATISTIK-HANTERING
+        // ====================
+        
+        function initStatistics() {
+            const timeRangeSelect = document.getElementById('timeRange');
+            const customDateRange = document.getElementById('customDateRange');
+            const chartTypeButtons = document.querySelectorAll('#chartTypeLine, #chartTypeBar');
+            const exportButton = document.getElementById('exportTable');
+            
+            // Visa/dölj anpassat datumintervall
+            timeRangeSelect.addEventListener('change', (e) => {
+                if (e.target.value === 'anpassat') {
+                    customDateRange.style.display = 'grid';
+                } else {
+                    customDateRange.style.display = 'none';
+                }
+                updateStatistics();
+            });
+            
+            // Lyssna på alla filter-ändringar för reaktiv uppdatering
+            ['granularity', 'sakraFilter', 'bolanFilter', 'startDate', 'endDate'].forEach(id => {
+                const element = document.getElementById(id);
+                element.addEventListener('change', () => {
+                    // Lägg till visual feedback
+                    element.style.transform = 'scale(1.02)';
+                    setTimeout(() => element.style.transform = 'scale(1)', 150);
+                    updateStatistics();
+                });
+            });
+            
+            // Diagram-typ knappar
+            chartTypeButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    chartTypeButtons.forEach(b => b.classList.remove('btn-primary'));
+                    chartTypeButtons.forEach(b => b.classList.add('btn-secondary'));
+                    e.target.classList.remove('btn-secondary');
+                    e.target.classList.add('btn-primary');
+                    updateChart();
+                });
+            });
+            
+            // Export tabell
+            exportButton.addEventListener('click', exportTableData);
+            
+            // Sätt standardvärden
+            document.getElementById('startDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('endDate').value = new Date().toISOString().split('T')[0];
+            
+            // Initial uppdatering
+            updateStatistics();
+        }
+        
+        function updateStatistics() {
+            updateGoalProgress();
+            updateChart();
+            updateTable();
+        }
+        
+        function getDateRange() {
+            const timeRange = document.getElementById('timeRange').value;
+            const today = new Date();
+            let startDate, endDate;
+            
+            switch (timeRange) {
+                case 'idag':
+                    startDate = new Date(today);
+                    startDate.setHours(0, 0, 0, 0);
+                    endDate = new Date(today);
+                    endDate.setHours(23, 59, 59, 999);
+                    break;
+                case 'vecka':
+                    startDate = new Date(today);
+                    startDate.setDate(today.getDate() - today.getDay() + 1);
+                    startDate.setHours(0, 0, 0, 0);
+                    endDate = new Date(startDate);
+                    endDate.setDate(startDate.getDate() + 6);
+                    endDate.setHours(23, 59, 59, 999);
+                    break;
+                case 'manad':
+                    startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                    endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+                    break;
+                case 'ar':
+                    startDate = new Date(today.getFullYear(), 0, 1);
+                    endDate = new Date(today.getFullYear(), 11, 31, 23, 59, 59, 999);
+                    break;
+                case 'anpassat':
+                    const startInput = document.getElementById('startDate').value;
+                    const endInput = document.getElementById('endDate').value;
+                    if (!startInput || !endInput) return null;
+                    startDate = new Date(startInput);
+                    startDate.setHours(0, 0, 0, 0);
+                    endDate = new Date(endInput);
+                    endDate.setHours(23, 59, 59, 999);
+                    break;
+                default:
+                    return null;
+            }
+            
+            return { startDate, endDate };
+        }
+        
+        function filterData() {
+            const dateRange = getDateRange();
+            if (!dateRange) return { calls: [], sales: [] };
+            
+            const { startDate, endDate } = dateRange;
+            const calls = getLocalStorage('ksCalls', []);
+            const sales = getLocalStorage('ksSales', []);
+            
+            // Filtrera samtal
+            const filteredCalls = calls.filter(call => {
+                const callDate = new Date(call.timestamp);
+                return callDate >= startDate && callDate <= endDate;
+            });
+            
+            // Filtrera försäljning
+            let filteredSales = sales.filter(sale => {
+                const saleDate = new Date(sale.timestamp);
+                return saleDate >= startDate && saleDate <= endDate;
+            });
+            
+            // Applicera säkra meddelanden filter
+            const sakraFilter = document.getElementById('sakraFilter').value;
+            if (sakraFilter !== 'alla') {
+                filteredSales = filteredSales.filter(sale => {
+                    if (sale.typ !== 'Säkra meddelanden') return true;
+                    return sakraFilter === 'digitala' ? 
+                        sale.tagg === 'Digitala' : 
+                        sale.tagg === 'Tid utanför digitala';
+                });
+            }
+            
+            // Applicera bolån filter
+            const bolanFilter = document.getElementById('bolanFilter').value;
+            if (bolanFilter !== 'alla') {
+                filteredSales = filteredSales.filter(sale => {
+                    if (sale.typ !== 'Bolån') return true;
+                    return sale.kanal === bolanFilter;
+                });
+            }
+            
+            return { calls: filteredCalls, sales: filteredSales };
+        }
+        
+        function updateGoalProgress() {
+            const { sales } = filterData();
+            
+            // Bestäm målperiod baserat på valt tidsomfång i statistikfliken
+            const timeRange = document.getElementById('timeRange').value;
+            let goalPeriod;
+            switch (timeRange) {
+                case 'idag':
+                    goalPeriod = 'pass';
+                    break;
+                case 'vecka':
+                    goalPeriod = 'vecka';
+                    break;
+                case 'manad':
+                    goalPeriod = 'manad';
+                    break;
+                case 'ar':
+                    goalPeriod = 'ar';
+                    break;
+                case 'anpassat':
+                    // För anpassat datumintervall, beräkna längd och välj lämplig period
+                    const dateRange = getDateRange();
+                    if (dateRange) {
+                        const days = Math.ceil((dateRange.endDate - dateRange.startDate) / (1000 * 60 * 60 * 24));
+                        if (days <= 1) goalPeriod = 'pass';
+                        else if (days <= 7) goalPeriod = 'vecka';
+                        else if (days <= 31) goalPeriod = 'manad';
+                        else if (days <= 90) goalPeriod = 'kvartal';
+                        else goalPeriod = 'ar';
+                    } else {
+                        goalPeriod = 'pass';
+                    }
+                    break;
+                default:
+                    goalPeriod = 'pass';
+            }
+            
+            const goals = getLocalStorage('ksGoals', DEFAULT_GOALS);
+            const currentGoals = goals[goalPeriod] || DEFAULT_GOALS[goalPeriod];
+            
+            // Räkna aktuell försäljning
+            const counts = {
+                'Säkra meddelanden': sales.filter(s => s.typ === 'Säkra meddelanden').length,
+                'Informationsfullmakt': sales.filter(s => s.typ === 'Informationsfullmakt').length,
+                'Gula rutan': sales.filter(s => s.typ === 'Gula rutan').length,
+                'Bolån': sales.filter(s => s.typ === 'Bolån').length
+            };
+            
+            const container = document.getElementById('goalProgress');
+            const periodLabel = {
+                pass: 'detta pass',
+                vecka: 'denna vecka', 
+                manad: 'denna månad',
+                kvartal: 'detta kvartal',
+                ar: 'detta år'
+            }[goalPeriod];
+            
+            const html = `
+                <div class="mb-2">
+                    <strong>Målprogress för ${periodLabel}</strong>
+                    <small style="color: var(--color-text-secondary); margin-left: 0.5rem;">
+                        (Baserat på valt tidsomfång: ${timeRange})
+                    </small>
+                </div>
+            ` + Object.entries(currentGoals).map(([type, goal]) => {
+                const current = counts[type] || 0;
+                const percentage = Math.min((current / goal) * 100, 100);
+                const status = current >= goal ? 'success' : percentage >= 75 ? 'warning' : 'primary';
+                
+                return `
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span><strong>${type}</strong></span>
+                            <span>${current} / ${goal}</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: ${percentage}%; background: var(--color-${status}); transition: width 0.5s ease;"></div>
+                        </div>
+                        <div class="progress-text">${percentage.toFixed(1)}% uppnått</div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+        
+        function updateChart() {
+            const { calls, sales } = filterData();
+            const granularity = document.getElementById('granularity').value;
+            const chartType = document.querySelector('#chartTypeLine.btn-primary') ? 'line' : 'bar';
+            
+            // Gruppera data enligt granularitet
+            const groupedData = groupDataByGranularity(calls, sales, granularity);
+            
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            
+            let labels = Object.keys(groupedData).sort();
+            
+            // Hantera fallet med endast ett datum - skapa fler datapunkter för bättre visualisering
+            if (labels.length === 1 && granularity !== 'timme') {
+                const singleLabel = labels[0];
+                const singleData = groupedData[singleLabel];
+                
+                // Lägg till tomma datapunkter före och efter för bättre visualisering
+                const dateRange = getDateRange();
+                if (dateRange && granularity === 'pass') {
+                    // För enskilda pass, visa timvis uppdelning om data finns
+                    const hourlyData = {};
+                    const allData = [...calls, ...sales];
+                    
+                    allData.forEach(item => {
+                        const itemDate = new Date(item.timestamp);
+                        const hour = itemDate.getHours();
+                        const hourKey = `${hour.toString().padStart(2, '0')}:00`;
+                        
+                        if (!hourlyData[hourKey]) hourlyData[hourKey] = {};
+                        
+                        if (calls.includes(item)) {
+                            hourlyData[hourKey].samtal = (hourlyData[hourKey].samtal || 0) + 1;
+                        } else {
+                            hourlyData[hourKey][item.typ] = (hourlyData[hourKey][item.typ] || 0) + 1;
+                        }
+                    });
+                    
+                    if (Object.keys(hourlyData).length > 1) {
+                        labels = Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00`);
+                        Object.assign(groupedData, hourlyData);
+                    }
+                }
+            }
+            
+            // Om fortfarande bara en datapunkt, lägg till tomma
+            if (labels.length === 1) {
+                const currentLabel = labels[0];
+                labels = ['Föregående', currentLabel, 'Nästa'];
+                groupedData['Föregående'] = {};
+                groupedData['Nästa'] = {};
+            }
+            
+            if (currentChart) {
+                currentChart.destroy();
+            }
+            
+            const datasets = [
+                {
+                    label: 'Säkra meddelanden',
+                    data: labels.map(label => groupedData[label]?.['Säkra meddelanden'] || 0),
+                    backgroundColor: 'rgba(46, 125, 50, 0.2)',
+                    borderColor: 'rgba(46, 125, 50, 1)',
+                    borderWidth: 2,
+                    fill: chartType === 'line' ? 'origin' : false,
+                    tension: 0.4
+                },
+                {
+                    label: 'Informationsfullmakt',
+                    data: labels.map(label => groupedData[label]?.['Informationsfullmakt'] || 0),
+                    backgroundColor: 'rgba(156, 39, 176, 0.2)',
+                    borderColor: 'rgba(156, 39, 176, 1)',
+                    borderWidth: 2,
+                    fill: chartType === 'line' ? 'origin' : false,
+                    tension: 0.4
+                },
+                {
+                    label: 'Gula rutan',
+                    data: labels.map(label => groupedData[label]?.['Gula rutan'] || 0),
+                    backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                    borderColor: 'rgba(255, 193, 7, 1)',
+                    borderWidth: 2,
+                    fill: chartType === 'line' ? 'origin' : false,
+                    tension: 0.4
+                },
+                {
+                    label: 'Bolån',
+                    data: labels.map(label => groupedData[label]?.['Bolån'] || 0),
+                    backgroundColor: 'rgba(233, 30, 99, 0.2)',
+                    borderColor: 'rgba(233, 30, 99, 1)',
+                    borderWidth: 2,
+                    fill: chartType === 'line' ? 'origin' : false,
+                    tension: 0.4
+                },
+                {
+                    label: 'Samtal',
+                    data: labels.map(label => groupedData[label]?.samtal || 0),
+                    backgroundColor: 'rgba(11, 92, 171, 0.2)',
+                    borderColor: 'rgba(11, 92, 171, 1)',
+                    borderWidth: 2,
+                    fill: chartType === 'line' ? 'origin' : false,
+                    tension: 0.4
+                }
+            ];
+            
+            currentChart = new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 750,
+                        easing: 'easeInOutQuart'
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: `Statistik per ${granularity}${labels.length === 1 ? ' (enskilt datum)' : ''}`
+                        },
+                        tooltip: {
+                            callbacks: {
+                                afterLabel: function(context) {
+                                    if (labels.length === 3 && (context.label === 'Föregående' || context.label === 'Nästa')) {
+                                        return '(Ingen data)';
+                                    }
+                                    return '';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function groupDataByGranularity(calls, sales, granularity) {
+            const grouped = {};
+            
+            // Gruppera samtal
+            calls.forEach(call => {
+                const key = getGroupingKey(call.timestamp, granularity);
+                if (!grouped[key]) grouped[key] = {};
+                grouped[key].samtal = (grouped[key].samtal || 0) + 1;
+            });
+            
+            // Gruppera försäljning
+            sales.forEach(sale => {
+                const key = getGroupingKey(sale.timestamp, granularity);
+                if (!grouped[key]) grouped[key] = {};
+                grouped[key][sale.typ] = (grouped[key][sale.typ] || 0) + 1;
+            });
+            
+            return grouped;
+        }
+        
+        function getGroupingKey(timestamp, granularity) {
+            const date = new Date(timestamp);
+            
+            switch (granularity) {
+                case 'timme':
+                    return `${date.toLocaleDateString('sv-SE')} ${date.getHours()}:00`;
+                case 'pass':
+                    return `Pass ${date.toLocaleDateString('sv-SE')}`;
+                case 'dag':
+                    return date.toLocaleDateString('sv-SE');
+                case 'vecka':
+                    const weekStart = new Date(date);
+                    weekStart.setDate(date.getDate() - date.getDay() + 1);
+                    return `Vecka ${weekStart.toLocaleDateString('sv-SE')}`;
+                case 'manad':
+                    return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+                case 'kvartal':
+                    const quarter = Math.floor(date.getMonth() / 3) + 1;
+                    return `${date.getFullYear()} Q${quarter}`;
+                case 'ar':
+                    return date.getFullYear().toString();
+                default:
+                    return date.toLocaleDateString('sv-SE');
+            }
+        }
+        
+        function updateTable() {
+            const { calls, sales } = filterData();
+            const granularity = document.getElementById('granularity').value;
+            const groupedData = groupDataByGranularity(calls, sales, granularity);
+            
+            const thead = document.getElementById('statsTableHead');
+            const tbody = document.getElementById('statsTableBody');
+            
+            // Skapa tabellhuvud
+            thead.innerHTML = `
+                <tr>
+                    <th>${granularity.charAt(0).toUpperCase() + granularity.slice(1)}</th>
+                    <th>Samtal</th>
+                    <th>Säkra meddelanden</th>
+                    <th>Informationsfullmakt</th>
+                    <th>Gula rutan</th>
+                    <th>Bolån</th>
+                    <th>Ärenden totalt</th>
+                </tr>
+            `;
+            
+            // Skapa tabellrader
+            const rows = Object.entries(groupedData)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([key, data]) => {
+                    const samtal = data.samtal || 0;
+                    const sakra = data['Säkra meddelanden'] || 0;
+                    const info = data['Informationsfullmakt'] || 0;
+                    const gula = data['Gula rutan'] || 0;
+                    const bolan = data['Bolån'] || 0;
+                    const totalt = samtal + sakra;
+                    
+                    return `
+                        <tr>
+                            <td>${key}</td>
+                            <td>${samtal}</td>
+                            <td>${sakra}</td>
+                            <td>${info}</td>
+                            <td>${gula}</td>
+                            <td>${bolan}</td>
+                            <td>${totalt}</td>
+                        </tr>
+                    `;
+                }).join('');
+            
+            tbody.innerHTML = rows;
+        }
+        
+        function exportTableData() {
+            const table = document.getElementById('statsTable');
+            const csv = [];
+            
+            // Lägg till rubrik
+            const headers = Array.from(table.querySelectorAll('th')).map(th => th.textContent);
+            csv.push(headers.join(','));
+            
+            // Lägg till rader
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            rows.forEach(row => {
+                const cells = Array.from(row.querySelectorAll('td')).map(td => td.textContent);
+                csv.push(cells.join(','));
+            });
+            
+            // Skapa och ladda ner fil
+            const csvContent = csv.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `ks-statistik-${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+            window.URL.revokeObjectURL(url);
+            
+            showToast('Tabell exporterad');
+        }
+        
+        // ====================
+        // IMPORT/EXPORT-HANTERING
+        // ====================
+        
+        function initDataManagement() {
+            const exportButton = document.getElementById('exportData');
+            const importInput = document.getElementById('importData');
+            
+            exportButton.addEventListener('click', exportAllData);
+            importInput.addEventListener('change', importData);
+        }
+        
+        function exportAllData() {
+            const data = {
+                ksCalls: getLocalStorage('ksCalls', []),
+                ksSales: getLocalStorage('ksSales', []),
+                ksPass: getLocalStorage('ksPass', []),
+                ksGoals: getLocalStorage('ksGoals', DEFAULT_GOALS),
+                exportDate: new Date().toISOString(),
+                version: '1.0'
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `ks-data-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            window.URL.revokeObjectURL(url);
+            
+            showToast('All data har exporterats');
+        }
+        
+        function importData(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    
+                    // Validera data
+                    if (!data.ksCalls && !data.ksSales && !data.ksGoals) {
+                        throw new Error('Ogiltigt dataformat');
+                    }
+                    
+                    // Bekräfta import
+                    if (!confirm('Detta kommer att ersätta all befintlig data. Fortsätt?')) {
+                        return;
+                    }
+                    
+                    // Importera data
+                    if (data.ksCalls) setLocalStorage('ksCalls', data.ksCalls);
+                    if (data.ksSales) setLocalStorage('ksSales', data.ksSales);
+                    if (data.ksPass) setLocalStorage('ksPass', data.ksPass);
+                    if (data.ksGoals) setLocalStorage('ksGoals', data.ksGoals);
+                    
+                    showToast('Data har importerats');
+                    
+                    // Uppdatera allt
+                    updateRecentCalls();
+                    updateSalesCounters();
+                    updateStatistics();
+                    
+                } catch (error) {
+                    console.error('Import fel:', error);
+                    showToast('Fel vid import av data', 'error');
+                }
+            };
+            
+            reader.readAsText(file);
+            e.target.value = ''; // Återställ input
+        }
+        
+        // ====================
+        // INSTÄLLNINGAR-HANTERING
+        // ====================
+        
+        function initSettings() {
+            const populateButton = document.getElementById('populateExampleData');
+            const deleteButton = document.getElementById('deleteAllData');
+            const confirmInput = document.getElementById('confirmDelete');
+            
+            // Populera exempeldata
+            populateButton.addEventListener('click', populateExampleData);
+            
+            // Aktivera/inaktivera radera-knapp baserat på bekräftelse
+            confirmInput.addEventListener('input', (e) => {
+                const isValid = e.target.value.trim() === 'RADERA';
+                deleteButton.disabled = !isValid;
+                deleteButton.style.opacity = isValid ? '1' : '0.5';
+            });
+            
+            // Radera all data
+            deleteButton.addEventListener('click', deleteAllData);
+        }
+        
+        function populateExampleData() {
+            if (!confirm('Detta kommer lägga till exempeldata. Fortsätt?')) {
+                return;
+            }
+            
+            const now = new Date();
+            const exampleCalls = [];
+            const exampleSales = [];
+            
+            // Skapa exempeldata för de senaste 30 dagarna
+            for (let i = 0; i < 30; i++) {
+                const date = new Date(now);
+                date.setDate(now.getDate() - i);
+                
+                // Variera antalet baserat på dag
+                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                const callCount = isWeekend ? Math.floor(Math.random() * 3) : Math.floor(Math.random() * 8) + 2;
+                const salesMultiplier = isWeekend ? 0.3 : 1;
+                
+                // Skapa samtal för dagen
+                for (let j = 0; j < callCount; j++) {
+                    const callTime = new Date(date);
+                    callTime.setHours(8 + Math.floor(Math.random() * 8), Math.floor(Math.random() * 60));
+                    
+                    exampleCalls.push({
+                        id: generateUUID(),
+                        typ: Math.random() > 0.3 ? 'Telefonsamtal' : 'KF',
+                        kategori: Math.random() > 0.5 ? 'Guldkund' : 'Bankärende',
+                        stjarna_generellt: Math.floor(Math.random() * 2) + 4, // 4-5 stjärnor
+                        stjarna_kund: Math.floor(Math.random() * 3) + 3, // 3-5 stjärnor
+                        stjarna_insats: Math.floor(Math.random() * 2) + 4, // 4-5 stjärnor
+                        vad_gick_bra: [
+                            'Kunden var nöjd med servicen',
+                            'Löste kundens problem snabbt',
+                            'Bra kommunikation under samtalet',
+                            'Kunde hjälpa med flera frågor',
+                            'Professionell hantering av ärendet'
+                        ][Math.floor(Math.random() * 5)],
+                        forbattra: [
+                            'Kunde varit mer proaktiv',
+                            'Bättre uppföljning nästa gång',
+                            'Mer detaljerad förklaring',
+                            'Snabbare lösning',
+                            ''
+                        ][Math.floor(Math.random() * 5)],
+                        samtalstid_min: Math.floor(Math.random() * 25) + 5, // 5-30 min
+                        timestamp: callTime.toISOString()
+                    });
+                }
+                
+                // Skapa försäljningsdata för dagen
+                const sakraCount = Math.floor((Math.random() * 15 + 5) * salesMultiplier);
+                const infoCount = Math.floor((Math.random() * 3 + 1) * salesMultiplier);
+                const gulaCount = Math.floor((Math.random() * 8 + 2) * salesMultiplier);
+                const bolanCount = Math.floor((Math.random() * 2) * salesMultiplier);
+                
+                // Säkra meddelanden
+                for (let k = 0; k < sakraCount; k++) {
+                    const saleTime = new Date(date);
+                    saleTime.setHours(8 + Math.floor(Math.random() * 8), Math.floor(Math.random() * 60));
+                    
+                    exampleSales.push({
+                        id: generateUUID(),
+                        typ: 'Säkra meddelanden',
+                        tagg: Math.random() > 0.7 ? 'Tid utanför digitala' : 'Digitala',
+                        timestamp: saleTime.toISOString()
+                    });
+                }
+                
+                // Informationsfullmakt
+                for (let k = 0; k < infoCount; k++) {
+                    const saleTime = new Date(date);
+                    saleTime.setHours(8 + Math.floor(Math.random() * 8), Math.floor(Math.random() * 60));
+                    
+                    exampleSales.push({
+                        id: generateUUID(),
+                        typ: 'Informationsfullmakt',
+                        timestamp: saleTime.toISOString()
+                    });
+                }
+                
+                // Gula rutan
+                for (let k = 0; k < gulaCount; k++) {
+                    const saleTime = new Date(date);
+                    saleTime.setHours(8 + Math.floor(Math.random() * 8), Math.floor(Math.random() * 60));
+                    
+                    exampleSales.push({
+                        id: generateUUID(),
+                        typ: 'Gula rutan',
+                        timestamp: saleTime.toISOString()
+                    });
+                }
+                
+                // Bolån
+                for (let k = 0; k < bolanCount; k++) {
+                    const saleTime = new Date(date);
+                    saleTime.setHours(8 + Math.floor(Math.random() * 8), Math.floor(Math.random() * 60));
+                    
+                    const kanaler = ['Säkra meddelanden', 'Telefonsamtal inringning', 'Telefonsamtal utringning'];
+                    
+                    exampleSales.push({
+                        id: generateUUID(),
+                        typ: 'Bolån',
+                        kanal: kanaler[Math.floor(Math.random() * kanaler.length)],
+                        timestamp: saleTime.toISOString()
+                    });
+                }
+            }
+            
+            // Spara exempeldata
+            const existingCalls = getLocalStorage('ksCalls', []);
+            const existingSales = getLocalStorage('ksSales', []);
+            
+            setLocalStorage('ksCalls', [...existingCalls, ...exampleCalls]);
+            setLocalStorage('ksSales', [...existingSales, ...exampleSales]);
+            
+            showToast(`Exempeldata tillagd: ${exampleCalls.length} samtal och ${exampleSales.length} säljpunkter`);
+            
+            // Uppdatera alla vyer
+            updateRecentCalls();
+            updateSalesCounters();
+            updateStatistics();
+        }
+        
+        function deleteAllData() {
+            const confirmText = document.getElementById('confirmDelete').value.trim();
+            
+            if (confirmText !== 'RADERA') {
+                showToast('Du måste skriva "RADERA" för att bekräfta', 'error');
+                return;
+            }
+            
+            if (!confirm('Är du säker på att du vill radera ALL data? Detta kan inte ångras.')) {
+                return;
+            }
+            
+            // Radera all data
+            localStorage.removeItem('ksCalls');
+            localStorage.removeItem('ksSales');
+            localStorage.removeItem('ksPass');
+            localStorage.removeItem('ksGoals');
+            
+            // Återställ mål till standard
+            setLocalStorage('ksGoals', DEFAULT_GOALS);
+            
+            // Rensa bekräftelseinput
+            document.getElementById('confirmDelete').value = '';
+            document.getElementById('deleteAllData').disabled = true;
+            
+            showToast('All data har raderats');
+            
+            // Uppdatera alla vyer
+            updateRecentCalls();
+            updateSalesCounters();
+            updateStatistics();
+        }
+        
+        // ====================
+        // INITIERING AV APPLIKATION
+        // ====================
+        
+        function initApp() {
+            initTheme();
+            initTabs();
+            initStarRatings();
+            initCallForm();
+            initSalesGoals();
+            initStatistics();
+            initDataManagement();
+            initSettings();
+            
+            // Sätt initial data om den inte finns
+            if (!localStorage.getItem('ksGoals')) {
+                setLocalStorage('ksGoals', DEFAULT_GOALS);
+            }
+            
+            console.log('KS statistik app initierad - version 2.0');
+        }
+        
+        // Starta appen när DOM är redo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
+        
+    </script>
+</body>
+</html>
+
+<!--
+EXEMPEL PÅ MANIFEST.WEBMANIFEST
+Spara följande som manifest.webmanifest i samma mapp som index.html:
+
+{
+  "name": "KS statistik",
+  "short_name": "KS statistik",
+  "description": "Kundservice statistik för LF Bergslagen",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0b5cab",
+  "orientation": "portrait-primary"
+}
+
+IKONER SOM FÖRVÄNTAS:
+- logo.png (för header)
+- favicon.png (16-32px)
+- icon-192.png (192x192px)
+- icon-512.png (512x512px)
+-->
