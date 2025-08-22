@@ -1022,7 +1022,7 @@
                     <button class="btn btn-primary" id="exportData">Exportera all data</button>
                     <label class="btn btn-secondary">
                         Importera data
-                        <input type="file" id="importData" accept=".json" style="display: none;">
+                        <input type="file" id="importData" accept=".json,.csv" style="display: none;">
                     </label>
                 </div>
             </div>
@@ -2237,44 +2237,167 @@
             showToast('All data har exporterats');
         }
         
+        // Hjälpfunktion för att parsa en CSV-rad
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    if (inQuotes && line[i + 1] === '"') {
+                        current += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current);
+            return result;
+        }
+
+        // Parser för äldre CSV-format med dagliga summeringar
+        function parseDailySalesCSV(lines) {
+            const sales = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+
+                const [date, sakraMedd, info, gula, bolan, sakraDigitala, sakraUtanf, bolanSM, bolanIn, bolanUt] = parseCSVLine(lines[i]);
+
+                const baseDate = new Date(date);
+                if (isNaN(baseDate)) continue;
+
+                const addEntries = (count, type, kanal = null) => {
+                    const n = Number(count) || 0;
+                    for (let j = 0; j < n; j++) {
+                        const ts = new Date(baseDate);
+                        ts.setHours(12 + Math.floor(Math.random() * 8), Math.floor(Math.random() * 60));
+                        sales.push({ typ: type, kanal, timestamp: ts.toISOString() });
+                    }
+                };
+
+                addEntries(sakraMedd, 'Säkra meddelanden');
+                addEntries(info, 'Informationsfullmakt');
+                addEntries(gula, 'Gula rutan');
+                addEntries(bolanSM, 'Bolån', 'Säkra meddelanden');
+                addEntries(bolanIn, 'Bolån', 'Telefonsamtal inringning');
+                addEntries(bolanUt, 'Bolån', 'Telefonsamtal utringning');
+
+                const totalBolan = Number(bolan) || 0;
+                const channelBolan = (Number(bolanSM) || 0) + (Number(bolanIn) || 0) + (Number(bolanUt) || 0);
+                if (totalBolan > channelBolan) {
+                    addEntries(totalBolan - channelBolan, 'Bolån');
+                }
+            }
+
+            return { ksCalls: [], ksSales: sales, ksGoals: {} };
+        }
+
+        // Parser för exporterat CSV-format
+        function parseCSVData(text) {
+            const lines = text.trim().split(/\r?\n/);
+
+            // Stöd för enklare dagligt säljformat
+            const header = parseCSVLine(lines[0] || '');
+            if (header[0] === 'Datum') {
+                return parseDailySalesCSV(lines);
+            }
+
+            let index = 0;
+            const calls = [];
+            const sales = [];
+            const goals = {};
+
+            if (lines[index]?.startsWith('dataset,typ,kategori')) {
+                index++;
+                while (index < lines.length && lines[index].trim() !== '') {
+                    const [_, typ, kategori, vad_gick_bra, forbattra, stjarna_generellt, stjarna_kund, stjarna_insats, samtalstid_min, timestamp] = parseCSVLine(lines[index]);
+                    calls.push({
+                        typ,
+                        kategori,
+                        vad_gick_bra,
+                        forbattra,
+                        stjarna_generellt: Number(stjarna_generellt),
+                        stjarna_kund: Number(stjarna_kund),
+                        stjarna_insats: Number(stjarna_insats),
+                        samtalstid_min: Number(samtalstid_min),
+                        timestamp
+                    });
+                    index++;
+                }
+                index++;
+            }
+
+            if (lines[index]?.startsWith('dataset,typ,kanal,tagg,timestamp')) {
+                index++;
+                while (index < lines.length && lines[index].trim() !== '') {
+                    const [_, typ, kanal, tagg, timestamp] = parseCSVLine(lines[index]);
+                    sales.push({ typ, kanal, tagg, timestamp });
+                    index++;
+                }
+                index++;
+            }
+
+            if (lines[index]?.startsWith('period,typ,mal')) {
+                index++;
+                while (index < lines.length && lines[index].trim() !== '') {
+                    const [period, typ, mal] = parseCSVLine(lines[index]);
+                    if (!goals[period]) goals[period] = {};
+                    goals[period][typ] = Number(mal);
+                    index++;
+                }
+            }
+
+            return { ksCalls: calls, ksSales: sales, ksGoals: goals };
+        }
+
         function importData(e) {
             const file = e.target.files[0];
             if (!file) return;
-            
+
             const reader = new FileReader();
             reader.onload = function(event) {
                 try {
-                    const data = JSON.parse(event.target.result);
-                    
-                    // Validera data
+                    const text = event.target.result;
+                    let data;
+                    if (file.name.toLowerCase().endsWith('.csv')) {
+                        data = parseCSVData(text);
+                    } else {
+                        data = JSON.parse(text);
+                    }
+
                     if (!data.ksCalls && !data.ksSales && !data.ksGoals) {
                         throw new Error('Ogiltigt dataformat');
                     }
-                    
-                    // Bekräfta import
+
                     if (!confirm('Detta kommer att ersätta all befintlig data. Fortsätt?')) {
                         return;
                     }
-                    
-                    // Importera data
+
                     if (data.ksCalls) setLocalStorage('ksCalls', data.ksCalls);
                     if (data.ksSales) setLocalStorage('ksSales', data.ksSales);
                     if (data.ksPass) setLocalStorage('ksPass', data.ksPass);
                     if (data.ksGoals) setLocalStorage('ksGoals', data.ksGoals);
-                    
+
                     showToast('Data har importerats');
-                    
-                    // Uppdatera allt
+
                     updateRecentCalls();
                     updateSalesCounters();
                     updateStatistics();
-                    
+
                 } catch (error) {
                     console.error('Import fel:', error);
                     showToast('Fel vid import av data', 'error');
                 }
             };
-            
+
             reader.readAsText(file);
             e.target.value = ''; // Återställ input
         }
