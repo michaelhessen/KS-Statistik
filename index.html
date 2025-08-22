@@ -1148,24 +1148,71 @@
             });
         }
         
-        // Hämta data från localStorage med fallback till tom array
-        function getLocalStorage(key, defaultValue = []) {
-            try {
-                const data = localStorage.getItem(key);
-                return data ? JSON.parse(data) : defaultValue;
-            } catch (error) {
-                console.error(`Fel vid hämtning av ${key}:`, error);
-                return defaultValue;
-            }
+        // IndexedDB-konfiguration
+        const DB_NAME = 'ksDB';
+        const STORE_NAME = 'ksStore';
+        let db;
+        const dbCache = {};
+
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, 1);
+
+                request.onupgradeneeded = (event) => {
+                    db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME);
+                    }
+                };
+
+                request.onsuccess = (event) => {
+                    db = event.target.result;
+                    const transaction = db.transaction(STORE_NAME, 'readonly');
+                    const store = transaction.objectStore(STORE_NAME);
+                    const cursorRequest = store.openCursor();
+                    cursorRequest.onsuccess = (e) => {
+                        const cursor = e.target.result;
+                        if (cursor) {
+                            dbCache[cursor.key] = cursor.value;
+                            cursor.continue();
+                        } else {
+                            resolve();
+                        }
+                    };
+                    cursorRequest.onerror = () => resolve();
+                };
+
+                request.onerror = (event) => {
+                    reject(event.target.error);
+                };
+            });
         }
-        
-        // Spara data till localStorage
+
+        // Hämta data från IndexedDB-cache med fallback till defaultValue
+        function getLocalStorage(key, defaultValue = null) {
+            return dbCache.hasOwnProperty(key) ? dbCache[key] : defaultValue;
+        }
+
+        // Spara data till IndexedDB
         function setLocalStorage(key, data) {
+            dbCache[key] = data;
             try {
-                localStorage.setItem(key, JSON.stringify(data));
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                tx.objectStore(STORE_NAME).put(data, key);
             } catch (error) {
                 console.error(`Fel vid sparning av ${key}:`, error);
                 showToast('Fel vid sparning av data', 'error');
+            }
+        }
+
+        // Ta bort data från IndexedDB
+        function removeLocalStorage(key) {
+            delete dbCache[key];
+            try {
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                tx.objectStore(STORE_NAME).delete(key);
+            } catch (error) {
+                console.error(`Fel vid radering av ${key}:`, error);
             }
         }
         
@@ -1203,7 +1250,7 @@
         // ====================
         
         function initTheme() {
-            const savedTheme = localStorage.getItem('ksTheme');
+            const savedTheme = getLocalStorage('ksTheme');
             const themeToggle = document.getElementById('themeToggle');
             
             if (savedTheme) {
@@ -1219,7 +1266,7 @@
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             
             document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('ksTheme', newTheme);
+            setLocalStorage('ksTheme', newTheme);
             updateThemeIcon(newTheme);
         }
         
@@ -2392,10 +2439,10 @@
             }
             
             // Radera all data
-            localStorage.removeItem('ksCalls');
-            localStorage.removeItem('ksSales');
-            localStorage.removeItem('ksPass');
-            localStorage.removeItem('ksGoals');
+            removeLocalStorage('ksCalls');
+            removeLocalStorage('ksSales');
+            removeLocalStorage('ksPass');
+            removeLocalStorage('ksGoals');
             
             // Återställ mål till standard
             setLocalStorage('ksGoals', DEFAULT_GOALS);
@@ -2416,7 +2463,8 @@
         // INITIERING AV APPLIKATION
         // ====================
         
-        function initApp() {
+        async function initApp() {
+            await initDB();
             initTheme();
             initTabs();
             initStarRatings();
@@ -2425,12 +2473,12 @@
             initStatistics();
             initDataManagement();
             initSettings();
-            
+
             // Sätt initial data om den inte finns
-            if (!localStorage.getItem('ksGoals')) {
+            if (!getLocalStorage('ksGoals')) {
                 setLocalStorage('ksGoals', DEFAULT_GOALS);
             }
-            
+
             console.log('KS statistik app initierad - version 2.0');
         }
         
