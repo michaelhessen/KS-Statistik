@@ -2262,9 +2262,54 @@
             return result;
         }
 
+        // Parser för äldre CSV-format med dagliga summeringar
+        function parseDailySalesCSV(lines) {
+            const sales = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+
+                const [date, sakraMedd, info, gula, bolan, sakraDigitala, sakraUtanf, bolanSM, bolanIn, bolanUt] = parseCSVLine(lines[i]);
+
+                const baseDate = new Date(date);
+                if (isNaN(baseDate)) continue;
+
+                const addEntries = (count, type, kanal = null) => {
+                    const n = Number(count) || 0;
+                    for (let j = 0; j < n; j++) {
+                        const ts = new Date(baseDate);
+                        ts.setHours(12 + Math.floor(Math.random() * 8), Math.floor(Math.random() * 60));
+                        sales.push({ typ: type, kanal, timestamp: ts.toISOString() });
+                    }
+                };
+
+                addEntries(sakraMedd, 'Säkra meddelanden');
+                addEntries(info, 'Informationsfullmakt');
+                addEntries(gula, 'Gula rutan');
+                addEntries(bolanSM, 'Bolån', 'Säkra meddelanden');
+                addEntries(bolanIn, 'Bolån', 'Telefonsamtal inringning');
+                addEntries(bolanUt, 'Bolån', 'Telefonsamtal utringning');
+
+                const totalBolan = Number(bolan) || 0;
+                const channelBolan = (Number(bolanSM) || 0) + (Number(bolanIn) || 0) + (Number(bolanUt) || 0);
+                if (totalBolan > channelBolan) {
+                    addEntries(totalBolan - channelBolan, 'Bolån');
+                }
+            }
+
+            return { ksCalls: [], ksSales: sales, ksGoals: {} };
+        }
+
         // Parser för exporterat CSV-format
         function parseCSVData(text) {
             const lines = text.trim().split(/\r?\n/);
+
+            // Stöd för enklare dagligt säljformat
+            const header = parseCSVLine(lines[0] || '');
+            if (header[0] === 'Datum') {
+                return parseDailySalesCSV(lines);
+            }
+
             let index = 0;
             const calls = [];
             const sales = [];
