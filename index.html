@@ -536,20 +536,6 @@
             height: 400px;
             margin-bottom: 2rem;
         }
-
-        .chart-average-box {
-            position: absolute;
-            top: 0.5rem;
-            left: 0.5rem;
-            background: var(--color-surface);
-            color: var(--color-text);
-            padding: 0.5rem 0.75rem;
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-small);
-            box-shadow: var(--shadow-small);
-            font-size: 0.875rem;
-            display: none;
-        }
         
         .chart-controls {
             display: flex;
@@ -997,7 +983,6 @@
                     </div>
                 </div>
                 <div class="chart-container">
-                    <div id="chartAverageBox" class="chart-average-box"></div>
                     <canvas id="mainChart"></canvas>
                 </div>
             </div>
@@ -1892,7 +1877,6 @@
             };
 
             const datasets = [];
-            const averages = [];
             selectedTypes.forEach(type => {
                 const config = datasetConfig[type];
                 const data = labels.map(label => groupedData[label]?.[type] || 0);
@@ -1909,16 +1893,18 @@
 
                 const sum = data.reduce((acc, val) => acc + val, 0);
                 const avg = data.length ? Math.round((sum / data.length) * 10) / 10 : 0;
-                averages.push(`${config.label || type}: ${avg}`);
+                datasets.push({
+                    label: `Genomsnitt ${config.label || type}`,
+                    data: labels.map(() => avg),
+                    backgroundColor: 'rgba(0,0,0,0)',
+                    borderColor: config.borderColor,
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false,
+                    tension: 0.4,
+                    type: 'line'
+                });
             });
-
-            const avgBox = document.getElementById('chartAverageBox');
-            if (averages.length) {
-                avgBox.innerHTML = `<strong>Genomsnitt per ${granularity}</strong><br>` + averages.join('<br>');
-                avgBox.style.display = 'block';
-            } else {
-                avgBox.style.display = 'none';
-            }
 
             currentChart = new Chart(ctx, {
                 type: chartType,
