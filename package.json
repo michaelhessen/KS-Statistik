@@ -1,0 +1,8 @@
+{
+  "name": "ks-statistik",
+  "version": "1.0.0",
+  "description": "Kundservice statistik webapp",
+  "scripts": {
+    "test": "echo \"No tests specified\""
+  }
+}

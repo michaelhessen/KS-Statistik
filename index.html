@@ -7,8 +7,8 @@
     <title>KS statistik - LF Bergslagen</title>
     
     <!-- Ikoner och manifest -->
-    <link rel="icon" href="favicon.png">
-    <link rel="apple-touch-icon" href="icon-512.png">
+    <link rel="icon" href="https://via.placeholder.com/32">
+    <link rel="apple-touch-icon" href="https://via.placeholder.com/512">
     <link rel="manifest" href="manifest.webmanifest">
     
     <!-- Chart.js från CDN -->
@@ -144,8 +144,8 @@
         }
         
         .logo {
-            height: 40px;
-            width: auto;
+            font-size: 1.5rem;
+            font-weight: bold;
         }
         
         .title {
@@ -675,6 +675,18 @@
             white-space: nowrap;
             border: 0;
         }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
     </style>
 </head>
 <body>
@@ -682,7 +694,7 @@
     <header class="header">
         <div class="header-content">
             <div class="logo-title">
-                <img src="logo.png" alt="LF Bergslagen" class="logo">
+                <span class="logo">LF Bergslagen</span>
                 <h1 class="title">KS statistik</h1>
             </div>
             <button class="theme-toggle" id="themeToggle" aria-label="Växla mellan ljust och mörkt tema">
@@ -928,6 +940,19 @@
                             <option value="Telefonsamtal inringning">Telefonsamtal inringning</option>
                             <option value="Telefonsamtal utringning">Telefonsamtal utringning</option>
                         </select>
+                    </div>
+                </div>
+                <div class="filter-row">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label class="form-label">Data att visa</label>
+                        <div id="typeFilters" class="checkbox-group">
+                            <label><input type="checkbox" class="type-filter" value="samtal" checked> Samtal</label>
+                            <label><input type="checkbox" class="type-filter" value="Säkra meddelanden" checked> Säkra meddelanden</label>
+                            <label><input type="checkbox" class="type-filter" value="Informationsfullmakt" checked> Informationsfullmakt</label>
+                            <label><input type="checkbox" class="type-filter" value="Gula rutan" checked> Gula rutan</label>
+                            <label><input type="checkbox" class="type-filter" value="Bolån" checked> Bolån</label>
+                            <label><input type="checkbox" class="type-filter" value="totalt" checked> Ärenden totalt</label>
+                        </div>
                     </div>
                 </div>
                 <div class="filter-row" id="customDateRange" style="display: none;">
@@ -1600,6 +1625,11 @@
                     updateStatistics();
                 });
             });
+
+            // Typfilter
+            document.querySelectorAll('.type-filter').forEach(cb => {
+                cb.addEventListener('change', updateStatistics);
+            });
             
             // Diagram-typ knappar
             chartTypeButtons.forEach(button => {
@@ -1801,112 +1831,64 @@
             
             container.innerHTML = html;
         }
-        
+        function getSelectedTypes() {
+            return Array.from(document.querySelectorAll('.type-filter:checked')).map(cb => cb.value);
+        }
+
         function updateChart() {
             const { calls, sales } = filterData();
             const granularity = document.getElementById('granularity').value;
             const chartType = document.querySelector('#chartTypeLine.btn-primary') ? 'line' : 'bar';
-            
+            const selectedTypes = getSelectedTypes();
+
             // Gruppera data enligt granularitet
             const groupedData = groupDataByGranularity(calls, sales, granularity);
-            
+
             const ctx = document.getElementById('mainChart').getContext('2d');
             
-            let labels = Object.keys(groupedData).sort();
-            
-            // Hantera fallet med endast ett datum - skapa fler datapunkter för bättre visualisering
-            if (labels.length === 1 && granularity !== 'timme') {
-                const singleLabel = labels[0];
-                const singleData = groupedData[singleLabel];
-                
-                // Lägg till tomma datapunkter före och efter för bättre visualisering
-                const dateRange = getDateRange();
-                if (dateRange && granularity === 'pass') {
-                    // För enskilda pass, visa timvis uppdelning om data finns
-                    const hourlyData = {};
-                    const allData = [...calls, ...sales];
-                    
-                    allData.forEach(item => {
-                        const itemDate = new Date(item.timestamp);
-                        const hour = itemDate.getHours();
-                        const hourKey = `${hour.toString().padStart(2, '0')}:00`;
-                        
-                        if (!hourlyData[hourKey]) hourlyData[hourKey] = {};
-                        
-                        if (calls.includes(item)) {
-                            hourlyData[hourKey].samtal = (hourlyData[hourKey].samtal || 0) + 1;
-                        } else {
-                            hourlyData[hourKey][item.typ] = (hourlyData[hourKey][item.typ] || 0) + 1;
-                        }
-                    });
-                    
-                    if (Object.keys(hourlyData).length > 1) {
-                        labels = Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00`);
-                        Object.assign(groupedData, hourlyData);
-                    }
+            let labels;
+            if (granularity === 'timme') {
+                labels = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
+            } else {
+                labels = Object.keys(groupedData).sort();
+                if (labels.length === 0) {
+                    labels = ['Inga data'];
+                    groupedData['Inga data'] = {};
+                }
+                if (labels.length === 1) {
+                    const currentLabel = labels[0];
+                    labels = ['Föregående', currentLabel, 'Nästa'];
+                    groupedData['Föregående'] = {};
+                    groupedData['Nästa'] = {};
                 }
             }
-            
-            // Om fortfarande bara en datapunkt, lägg till tomma
-            if (labels.length === 1) {
-                const currentLabel = labels[0];
-                labels = ['Föregående', currentLabel, 'Nästa'];
-                groupedData['Föregående'] = {};
-                groupedData['Nästa'] = {};
-            }
-            
+
             if (currentChart) {
                 currentChart.destroy();
             }
-            
-            const datasets = [
-                {
-                    label: 'Säkra meddelanden',
-                    data: labels.map(label => groupedData[label]?.['Säkra meddelanden'] || 0),
-                    backgroundColor: 'rgba(46, 125, 50, 0.2)',
-                    borderColor: 'rgba(46, 125, 50, 1)',
+
+            const datasetConfig = {
+                'Säkra meddelanden': { backgroundColor: 'rgba(46, 125, 50, 0.2)', borderColor: 'rgba(46, 125, 50, 1)' },
+                'Informationsfullmakt': { backgroundColor: 'rgba(156, 39, 176, 0.2)', borderColor: 'rgba(156, 39, 176, 1)' },
+                'Gula rutan': { backgroundColor: 'rgba(255, 193, 7, 0.2)', borderColor: 'rgba(255, 193, 7, 1)' },
+                'Bolån': { backgroundColor: 'rgba(233, 30, 99, 0.2)', borderColor: 'rgba(233, 30, 99, 1)' },
+                'samtal': { label: 'Samtal', backgroundColor: 'rgba(11, 92, 171, 0.2)', borderColor: 'rgba(11, 92, 171, 1)' },
+                'totalt': { label: 'Ärenden totalt', backgroundColor: 'rgba(100, 100, 100, 0.2)', borderColor: 'rgba(100, 100, 100, 1)' }
+            };
+
+            const datasets = selectedTypes.map(type => {
+                const config = datasetConfig[type];
+                return {
+                    label: config.label || type,
+                    data: labels.map(label => groupedData[label]?.[type] || 0),
+                    backgroundColor: config.backgroundColor,
+                    borderColor: config.borderColor,
                     borderWidth: 2,
                     fill: chartType === 'line' ? 'origin' : false,
                     tension: 0.4
-                },
-                {
-                    label: 'Informationsfullmakt',
-                    data: labels.map(label => groupedData[label]?.['Informationsfullmakt'] || 0),
-                    backgroundColor: 'rgba(156, 39, 176, 0.2)',
-                    borderColor: 'rgba(156, 39, 176, 1)',
-                    borderWidth: 2,
-                    fill: chartType === 'line' ? 'origin' : false,
-                    tension: 0.4
-                },
-                {
-                    label: 'Gula rutan',
-                    data: labels.map(label => groupedData[label]?.['Gula rutan'] || 0),
-                    backgroundColor: 'rgba(255, 193, 7, 0.2)',
-                    borderColor: 'rgba(255, 193, 7, 1)',
-                    borderWidth: 2,
-                    fill: chartType === 'line' ? 'origin' : false,
-                    tension: 0.4
-                },
-                {
-                    label: 'Bolån',
-                    data: labels.map(label => groupedData[label]?.['Bolån'] || 0),
-                    backgroundColor: 'rgba(233, 30, 99, 0.2)',
-                    borderColor: 'rgba(233, 30, 99, 1)',
-                    borderWidth: 2,
-                    fill: chartType === 'line' ? 'origin' : false,
-                    tension: 0.4
-                },
-                {
-                    label: 'Samtal',
-                    data: labels.map(label => groupedData[label]?.samtal || 0),
-                    backgroundColor: 'rgba(11, 92, 171, 0.2)',
-                    borderColor: 'rgba(11, 92, 171, 1)',
-                    borderWidth: 2,
-                    fill: chartType === 'line' ? 'origin' : false,
-                    tension: 0.4
-                }
-            ];
-            
+                };
+            });
+
             currentChart = new Chart(ctx, {
                 type: chartType,
                 data: {
@@ -1957,30 +1939,41 @@
         
         function groupDataByGranularity(calls, sales, granularity) {
             const grouped = {};
-            
+
             // Gruppera samtal
             calls.forEach(call => {
                 const key = getGroupingKey(call.timestamp, granularity);
                 if (!grouped[key]) grouped[key] = {};
                 grouped[key].samtal = (grouped[key].samtal || 0) + 1;
             });
-            
+
             // Gruppera försäljning
             sales.forEach(sale => {
                 const key = getGroupingKey(sale.timestamp, granularity);
                 if (!grouped[key]) grouped[key] = {};
                 grouped[key][sale.typ] = (grouped[key][sale.typ] || 0) + 1;
             });
-            
+
+            // Beräkna totalsumma
+            Object.keys(grouped).forEach(key => {
+                const data = grouped[key];
+                grouped[key].totalt =
+                    (data.samtal || 0) +
+                    (data['Säkra meddelanden'] || 0) +
+                    (data['Informationsfullmakt'] || 0) +
+                    (data['Gula rutan'] || 0) +
+                    (data['Bolån'] || 0);
+            });
+
             return grouped;
         }
-        
+
         function getGroupingKey(timestamp, granularity) {
             const date = new Date(timestamp);
-            
+
             switch (granularity) {
                 case 'timme':
-                    return `${date.toLocaleDateString('sv-SE')} ${date.getHours()}:00`;
+                    return `${date.getHours().toString().padStart(2, '0')}:00`;
                 case 'pass':
                     return `Pass ${date.toLocaleDateString('sv-SE')}`;
                 case 'dag':
@@ -2005,50 +1998,49 @@
             const { calls, sales } = filterData();
             const granularity = document.getElementById('granularity').value;
             const groupedData = groupDataByGranularity(calls, sales, granularity);
-            
+            const selectedTypes = getSelectedTypes();
+
             const thead = document.getElementById('statsTableHead');
             const tbody = document.getElementById('statsTableBody');
-            
-            // Skapa tabellhuvud
-            thead.innerHTML = `
-                <tr>
-                    <th>${granularity.charAt(0).toUpperCase() + granularity.slice(1)}</th>
-                    <th>Samtal</th>
-                    <th>Säkra meddelanden</th>
-                    <th>Informationsfullmakt</th>
-                    <th>Gula rutan</th>
-                    <th>Bolån</th>
-                    <th>Ärenden totalt</th>
-                </tr>
-            `;
-            
-            // Skapa tabellrader
-            const rows = Object.entries(groupedData)
-                .sort(([a], [b]) => a.localeCompare(b))
-                .map(([key, data]) => {
-                    const samtal = data.samtal || 0;
-                    const sakra = data['Säkra meddelanden'] || 0;
-                    const info = data['Informationsfullmakt'] || 0;
-                    const gula = data['Gula rutan'] || 0;
-                    const bolan = data['Bolån'] || 0;
-                    const totalt = samtal + sakra;
-                    
-                    return `
-                        <tr>
-                            <td>${key}</td>
-                            <td>${samtal}</td>
-                            <td>${sakra}</td>
-                            <td>${info}</td>
-                            <td>${gula}</td>
-                            <td>${bolan}</td>
-                            <td>${totalt}</td>
-                        </tr>
-                    `;
-                }).join('');
-            
+
+            const headersMap = {
+                'samtal': 'Samtal',
+                'Säkra meddelanden': 'Säkra meddelanden',
+                'Informationsfullmakt': 'Informationsfullmakt',
+                'Gula rutan': 'Gula rutan',
+                'Bolån': 'Bolån',
+                'totalt': 'Ärenden totalt'
+            };
+
+            thead.innerHTML = `<tr><th>${granularity.charAt(0).toUpperCase() + granularity.slice(1)}</th>` +
+                selectedTypes.map(type => `<th>${headersMap[type]}</th>`).join('') + `</tr>`;
+
+            let labels;
+            if (granularity === 'timme') {
+                labels = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
+            } else {
+                labels = Object.keys(groupedData).sort();
+                if (labels.length === 0) {
+                    labels = ['Inga data'];
+                    groupedData['Inga data'] = {};
+                }
+                if (labels.length === 1) {
+                    const currentLabel = labels[0];
+                    labels = ['Föregående', currentLabel, 'Nästa'];
+                    groupedData['Föregående'] = {};
+                    groupedData['Nästa'] = {};
+                }
+            }
+
+            const rows = labels.map(label => {
+                const data = groupedData[label] || {};
+                const cells = selectedTypes.map(type => data[type] || 0).join('</td><td>');
+                return `<tr><td>${label}</td><td>${cells}</td></tr>`;
+            }).join('');
+
             tbody.innerHTML = rows;
         }
-        
+
         function exportTableData() {
             const table = document.getElementById('statsTable');
             const csv = [];
@@ -2059,6 +2051,10 @@
             
             // Lägg till rader
             const rows = Array.from(table.querySelectorAll('tbody tr'));
+            if (rows.length === 0) {
+                showToast('Ingen data att exportera', 'error');
+                return;
+            }
             rows.forEach(row => {
                 const cells = Array.from(row.querySelectorAll('td')).map(td => td.textContent);
                 csv.push(cells.join(','));
@@ -2071,7 +2067,9 @@
             const link = document.createElement('a');
             link.href = url;
             link.download = `ks-statistik-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(link);
             link.click();
+            document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
             
             showToast('Tabell exporterad');
@@ -2364,37 +2362,3 @@
     </script>
 </body>
 </html>
-
-<!--
-EXEMPEL PÅ MANIFEST.WEBMANIFEST
-Spara följande som manifest.webmanifest i samma mapp som index.html:
-
-{
-  "name": "KS statistik",
-  "short_name": "KS statistik",
-  "description": "Kundservice statistik för LF Bergslagen",
-  "icons": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ],
-  "start_url": ".",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0b5cab",
-  "orientation": "portrait-primary"
-}
-
-IKONER SOM FÖRVÄNTAS:
-- logo.png (för header)
-- favicon.png (16-32px)
-- icon-192.png (192x192px)
-- icon-512.png (512x512px)
--->
