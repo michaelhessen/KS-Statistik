@@ -690,6 +690,12 @@
             color: var(--color-primary);
             border: 1px solid var(--color-primary);
         }
+
+        .tag-guldkund {
+            background: rgba(255, 215, 0, 0.1);
+            color: #b8860b;
+            border: 1px solid #b8860b;
+        }
         
         /* Hjälpklasser */
         .text-center { text-align: center; }
@@ -1611,7 +1617,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
                             <div>
                                 <strong>${call.typ}</strong>
-                                ${call.kategori ? `<span class="tag tag-kanal">${call.kategori}</span>` : ''}
+                                ${call.kategori ? `<span class="tag ${call.kategori === 'Guldkund' ? 'tag-guldkund' : 'tag-kanal'}">${call.kategori}</span>` : ''}
                             </div>
                             <small style="color: var(--color-text-muted);">${dateTime.full}</small>
                         </div>
@@ -1907,35 +1913,38 @@
         
         function filterData() {
             const dateRange = getDateRange();
-            if (!dateRange) return { calls: [], sales: [] };
-            
+            if (!dateRange) return { calls: [], sales: [], allSales: [] };
+
             const { startDate, endDate } = dateRange;
             const calls = getLocalStorage('ksCalls', []);
             const sales = getLocalStorage('ksSales', []);
-            
+
             // Filtrera samtal
             const filteredCalls = calls.filter(call => {
                 const callDate = new Date(call.timestamp);
                 return callDate >= startDate && callDate <= endDate;
             });
-            
-            // Filtrera försäljning
-            let filteredSales = sales.filter(sale => {
+
+            // Filtrera försäljning (datumintervall)
+            const salesInRange = sales.filter(sale => {
                 const saleDate = new Date(sale.timestamp);
                 return saleDate >= startDate && saleDate <= endDate;
             });
-            
+
+            // Applicera övriga filter på försäljning
+            let filteredSales = salesInRange;
+
             // Applicera säkra meddelanden filter
             const sakraFilter = document.getElementById('sakraFilter').value;
             if (sakraFilter !== 'alla') {
                 filteredSales = filteredSales.filter(sale => {
                     if (sale.typ !== 'Säkra meddelanden') return true;
-                    return sakraFilter === 'digitala' ? 
-                        sale.tagg === 'Digitala' : 
+                    return sakraFilter === 'digitala' ?
+                        sale.tagg === 'Digitala' :
                         sale.tagg === 'Tid utanför digitala';
                 });
             }
-            
+
             // Applicera bolån filter
             const bolanFilter = document.getElementById('bolanFilter').value;
             if (bolanFilter !== 'alla') {
@@ -1944,8 +1953,8 @@
                     return sale.kanal === bolanFilter;
                 });
             }
-            
-            return { calls: filteredCalls, sales: filteredSales };
+
+            return { calls: filteredCalls, sales: filteredSales, allSales: salesInRange };
         }
         
         function updateGoalProgress() {
@@ -2038,13 +2047,13 @@
         }
 
         function updateChart() {
-            const { calls, sales } = filterData();
+            const { calls, sales, allSales } = filterData();
             const granularity = document.getElementById('granularity').value;
             const chartType = document.querySelector('#chartTypeLine.btn-primary') ? 'line' : 'bar';
             const selectedTypes = getSelectedTypes();
 
             // Gruppera data enligt granularitet
-            const groupedData = groupDataByGranularity(calls, sales, granularity);
+            const groupedData = groupDataByGranularity(calls, sales, allSales, granularity);
 
             const ctx = document.getElementById('mainChart').getContext('2d');
             
@@ -2074,7 +2083,7 @@
                 'Informationsfullmakt': { backgroundColor: 'rgba(156, 39, 176, 0.2)', borderColor: 'rgba(156, 39, 176, 1)' },
                 'Gula rutan': { backgroundColor: 'rgba(255, 193, 7, 0.2)', borderColor: 'rgba(255, 193, 7, 1)' },
                 'Bolån': { backgroundColor: 'rgba(233, 30, 99, 0.2)', borderColor: 'rgba(233, 30, 99, 1)' },
-                'Guldkund': { label: 'Guldkundssamtal', backgroundColor: 'rgba(0, 150, 136, 0.2)', borderColor: 'rgba(0, 150, 136, 1)' },
+                'Guldkund': { label: 'Guldkundssamtal', backgroundColor: 'rgba(255, 215, 0, 0.2)', borderColor: 'rgba(255, 215, 0, 1)' },
                 'Bankärende': { label: 'Bankärende samtal', backgroundColor: 'rgba(255, 87, 34, 0.2)', borderColor: 'rgba(255, 87, 34, 1)' },
                 'samtal': { label: 'Samtal', backgroundColor: 'rgba(11, 92, 171, 0.2)', borderColor: 'rgba(11, 92, 171, 1)' },
                 'totalt': { label: 'Ärenden totalt', backgroundColor: 'rgba(100, 100, 100, 0.2)', borderColor: 'rgba(100, 100, 100, 1)' }
@@ -2168,7 +2177,7 @@
             });
         }
         
-        function groupDataByGranularity(calls, sales, granularity) {
+        function groupDataByGranularity(calls, sales, allSales, granularity) {
             const grouped = {};
 
             // Gruppera samtal
@@ -2184,22 +2193,32 @@
                 }
             });
 
-            // Gruppera försäljning
+            // Gruppera försäljning (filtrerade)
             sales.forEach(sale => {
                 const key = getGroupingKey(sale.timestamp, granularity);
                 if (!grouped[key]) grouped[key] = {};
                 grouped[key][sale.typ] = (grouped[key][sale.typ] || 0) + 1;
             });
 
+            // Räkna säkra meddelanden oavsett klassificering
+            const secureCounts = {};
+            allSales.forEach(sale => {
+                if (sale.typ === 'Säkra meddelanden' || sale.kanal === 'Säkra meddelanden') {
+                    const key = getGroupingKey(sale.timestamp, granularity);
+                    secureCounts[key] = (secureCounts[key] || 0) + 1;
+                }
+            });
+
+            // Se till att alla nycklar finns
+            Object.keys(secureCounts).forEach(key => {
+                if (!grouped[key]) grouped[key] = {};
+            });
+
             // Beräkna totalsumma
             Object.keys(grouped).forEach(key => {
                 const data = grouped[key];
-                grouped[key].totalt =
-                    (data.samtal || 0) +
-                    (data['Säkra meddelanden'] || 0) +
-                    (data['Informationsfullmakt'] || 0) +
-                    (data['Gula rutan'] || 0) +
-                    (data['Bolån'] || 0);
+                const secureTotal = secureCounts[key] || 0;
+                grouped[key].totalt = (data.samtal || 0) + secureTotal;
             });
 
             return grouped;
@@ -2232,9 +2251,9 @@
         }
 
         function updateTable() {
-            const { calls, sales } = filterData();
+            const { calls, sales, allSales } = filterData();
             const granularity = document.getElementById('granularity').value;
-            const groupedData = groupDataByGranularity(calls, sales, granularity);
+            const groupedData = groupDataByGranularity(calls, sales, allSales, granularity);
             const selectedTypes = getSelectedTypes();
 
             const thead = document.getElementById('statsTableHead');
