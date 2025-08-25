@@ -555,9 +555,24 @@
             margin-bottom: 2rem;
         }
 
-        .chart-average {
+        .chart-average-tab {
             position: absolute;
             top: 0.5rem;
+            left: 0.5rem;
+            background: var(--color-primary);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-small);
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            box-shadow: var(--shadow-small);
+            z-index: 5;
+        }
+
+        .chart-average {
+            position: absolute;
+            top: 2.5rem;
             left: 0.5rem;
             background: var(--color-surface);
             border: 1px solid var(--color-border);
@@ -980,6 +995,8 @@
                         <label class="form-label">Data att visa</label>
                         <div id="typeFilters" class="checkbox-group">
                             <label><input type="checkbox" class="type-filter" value="samtal" checked> Samtal</label>
+                            <label><input type="checkbox" class="type-filter" value="Guldkund" checked> Guldkundssamtal</label>
+                            <label><input type="checkbox" class="type-filter" value="Bankärende" checked> Bankärende samtal</label>
                             <label><input type="checkbox" class="type-filter" value="Säkra meddelanden" checked> Säkra meddelanden</label>
                             <label><input type="checkbox" class="type-filter" value="Informationsfullmakt" checked> Informationsfullmakt</label>
                             <label><input type="checkbox" class="type-filter" value="Gula rutan" checked> Gula rutan</label>
@@ -1016,7 +1033,8 @@
                     </div>
                 </div>
                 <div class="chart-container">
-                    <div id="averageBox" class="chart-average"></div>
+                    <button id="averageToggle" class="chart-average-tab" aria-label="Visa genomsnitt">📊</button>
+                    <div id="averageBox" class="chart-average" data-open="false"></div>
                     <canvas id="mainChart"></canvas>
                 </div>
             </div>
@@ -1775,6 +1793,8 @@
             const customDateRange = document.getElementById('customDateRange');
             const chartTypeButtons = document.querySelectorAll('#chartTypeLine, #chartTypeBar');
             const exportButton = document.getElementById('exportTable');
+            const avgToggle = document.getElementById('averageToggle');
+            const avgBox = document.getElementById('averageBox');
             
             // Visa/dölj anpassat datumintervall
             timeRangeSelect.addEventListener('change', (e) => {
@@ -1811,6 +1831,17 @@
                     e.target.classList.add('btn-primary');
                     updateChart();
                 });
+            });
+
+            // Genomsnittsruta toggle
+            avgToggle.addEventListener('click', () => {
+                const isOpen = avgBox.dataset.open === 'true';
+                avgBox.dataset.open = (!isOpen).toString();
+                if (avgBox.dataset.open === 'true' && avgBox.innerHTML.trim() !== '') {
+                    avgBox.style.display = 'block';
+                } else {
+                    avgBox.style.display = 'none';
+                }
             });
             
             // Export tabell
@@ -2043,6 +2074,8 @@
                 'Informationsfullmakt': { backgroundColor: 'rgba(156, 39, 176, 0.2)', borderColor: 'rgba(156, 39, 176, 1)' },
                 'Gula rutan': { backgroundColor: 'rgba(255, 193, 7, 0.2)', borderColor: 'rgba(255, 193, 7, 1)' },
                 'Bolån': { backgroundColor: 'rgba(233, 30, 99, 0.2)', borderColor: 'rgba(233, 30, 99, 1)' },
+                'Guldkund': { label: 'Guldkundssamtal', backgroundColor: 'rgba(0, 150, 136, 0.2)', borderColor: 'rgba(0, 150, 136, 1)' },
+                'Bankärende': { label: 'Bankärende samtal', backgroundColor: 'rgba(255, 87, 34, 0.2)', borderColor: 'rgba(255, 87, 34, 1)' },
                 'samtal': { label: 'Samtal', backgroundColor: 'rgba(11, 92, 171, 0.2)', borderColor: 'rgba(11, 92, 171, 1)' },
                 'totalt': { label: 'Ärenden totalt', backgroundColor: 'rgba(100, 100, 100, 0.2)', borderColor: 'rgba(100, 100, 100, 1)' }
             };
@@ -2080,7 +2113,9 @@
             const avgBox = document.getElementById('averageBox');
             if (selectedTypes.length > 0) {
                 avgBox.innerHTML = selectedTypes.map(type => `${type}: ${averages[type].toFixed(1)} per ${granularity}`).join('<br>');
-                avgBox.style.display = 'block';
+                if (avgBox.dataset.open === 'true') {
+                    avgBox.style.display = 'block';
+                }
             } else {
                 avgBox.style.display = 'none';
             }
@@ -2141,6 +2176,12 @@
                 const key = getGroupingKey(call.timestamp, granularity);
                 if (!grouped[key]) grouped[key] = {};
                 grouped[key].samtal = (grouped[key].samtal || 0) + 1;
+                if (call.kategori === 'Guldkund') {
+                    grouped[key].Guldkund = (grouped[key].Guldkund || 0) + 1;
+                }
+                if (call.kategori === 'Bankärende') {
+                    grouped[key].Bankärende = (grouped[key].Bankärende || 0) + 1;
+                }
             });
 
             // Gruppera försäljning
@@ -2201,6 +2242,8 @@
 
             const headersMap = {
                 'samtal': 'Samtal',
+                'Guldkund': 'Guldkundssamtal',
+                'Bankärende': 'Bankärende samtal',
                 'Säkra meddelanden': 'Säkra meddelanden',
                 'Informationsfullmakt': 'Informationsfullmakt',
                 'Gula rutan': 'Gula rutan',
