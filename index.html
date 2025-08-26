@@ -2105,17 +2105,35 @@
 
             const actualLabels = labels.filter(l => !['Föregående', 'Nästa', 'Inga data'].includes(l));
             const averages = {};
+
+            const intervalSets = {};
+            const addInterval = (type, timestamp) => {
+                const key = getGroupingKey(timestamp, granularity);
+                if (!intervalSets[type]) intervalSets[type] = new Set();
+                intervalSets[type].add(key);
+            };
+
+            calls.forEach(call => {
+                addInterval('samtal', call.timestamp);
+                addInterval('totalt', call.timestamp);
+                if (call.kategori === 'Guldkund') addInterval('Guldkund', call.timestamp);
+                if (call.kategori === 'Bankärende') addInterval('Bankärende', call.timestamp);
+            });
+
+            sales.forEach(sale => {
+                addInterval(sale.typ, sale.timestamp);
+            });
+
+            allSales.forEach(sale => {
+                if (sale.typ === 'Säkra meddelanden' || sale.kanal === 'Säkra meddelanden') {
+                    addInterval('Säkra meddelanden', sale.timestamp);
+                    addInterval('totalt', sale.timestamp);
+                }
+            });
+
             selectedTypes.forEach(type => {
                 const total = actualLabels.reduce((sum, label) => sum + (groupedData[label]?.[type] || 0), 0);
-                let divisor = actualLabels.length;
-                if (granularity === 'timme') {
-                    const range = getDateRange();
-                    if (range) {
-                        const msPerDay = 1000 * 60 * 60 * 24;
-                        const days = Math.floor((range.endDate - range.startDate) / msPerDay) + 1;
-                        divisor = days * 8;
-                    }
-                }
+                const divisor = intervalSets[type] ? intervalSets[type].size : 0;
                 averages[type] = total / (divisor || 1);
             });
 
