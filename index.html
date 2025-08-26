@@ -1278,7 +1278,7 @@
                     </form>
                     <div class="form-group">
                         <label for="caseOutput" class="form-label">Ärende</label>
-                        <textarea id="caseOutput" class="form-control" rows="6"></textarea>
+                        <textarea id="caseOutput" class="form-control" rows="12"></textarea>
                         <button type="button" id="copyCaseBtn" class="btn btn-secondary" style="margin-top:0.5rem;">Kopiera</button>
                     </div>
                     <div class="form-group">
@@ -3251,6 +3251,8 @@ ${kycText.value}
 
 ${avtalText.value}`;
                 caseOutput.value = caseText;
+                caseOutput.style.height = 'auto';
+                caseOutput.style.height = caseOutput.scrollHeight + 'px';
 
                 let oversikt = '';
                 if (type === 'swish') {
