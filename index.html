@@ -1524,11 +1524,18 @@
             const themeToggle = document.getElementById('themeToggle');
             themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
         }
-        
+
+        // Hjälpfunktion för att anpassa höjd på textarea efter innehåll
+        function autoResizeTextarea(el) {
+            if (!el) return;
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
+        }
+
         // ====================
         // FLIK-NAVIGATION
         // ====================
-        
+
         function initTabs() {
             const tabButtons = document.querySelectorAll('.tab-button');
             const tabContents = document.querySelectorAll('.tab-content');
@@ -1544,6 +1551,11 @@
                 if (content) content.classList.add('active');
 
                 currentTab = tabId;
+
+                if (tabId === 'arbetsstod') {
+                    autoResizeTextarea(document.getElementById('caseOutput'));
+                    autoResizeTextarea(document.getElementById('activityOutput'));
+                }
 
                 if (tabId === 'logg') {
                     if (currentLoggTab === 'samtal') {
@@ -3149,6 +3161,9 @@
             const caseOutput = document.getElementById('caseOutput');
             const activityOutput = document.getElementById('activityOutput');
 
+            caseOutput.addEventListener('input', () => autoResizeTextarea(caseOutput));
+            activityOutput.addEventListener('input', () => autoResizeTextarea(activityOutput));
+
             const typeMap = {
                 swish: { behov: 'höja sin swishgräns', process: 'höjningen', bankid: true },
                 overforing: { behov: 'göra en större överföring', process: 'överföringen', bankid: false },
@@ -3251,8 +3266,7 @@ ${kycText.value}
 
 ${avtalText.value}`;
                 caseOutput.value = caseText;
-                caseOutput.style.height = 'auto';
-                caseOutput.style.height = caseOutput.scrollHeight + 'px';
+                autoResizeTextarea(caseOutput);
 
                 let oversikt = '';
                 if (type === 'swish') {
@@ -3274,6 +3288,7 @@ ${avtalText.value}`;
                 }
                 activityOutput.value = `Översikt: ${oversikt}
 Kommentar: ${kommentar}`;
+                autoResizeTextarea(activityOutput);
             }
 
             handlingSelect.addEventListener('change', updateDynamicFields);
