@@ -1258,8 +1258,8 @@
                                 <option value="lon">Eget sparande av lön</option>
                                 <option value="lan">Lån</option>
                                 <option value="annat">Eget sparande i annat institut</option>
+                                <option value="fritext">Fritext</option>
                             </select>
-                            <input id="ursprungLonLank" class="form-control" placeholder="Spårning i LÄNK" style="display:none; margin-top:0.5rem;">
                             <select id="ursprungLanDetalj" class="form-control" style="display:none; margin-top:0.5rem;">
                                 <option value="skuldebrev">skuldebrev inskickat som underlag</option>
                                 <option value="inget">finns inget skuldebrev</option>
@@ -1267,6 +1267,7 @@
                             <label id="annatUnderlagLabel" style="display:none; margin-top:0.5rem;">
                                 <input type="checkbox" id="annatUnderlag"> underlag inskickat
                             </label>
+                            <input id="ursprungFritext" class="form-control" placeholder="Fritext" style="display:none; margin-top:0.5rem;">
                         </div>
                         <div class="form-group">
                             <label class="form-label">4. KYC</label>
@@ -3157,28 +3158,28 @@
             const avseendeSpar = document.getElementById('avseendeSpar');
             const avseendeFritext = document.getElementById('avseendeFritext');
             const ursprungSelect = document.getElementById('ursprung');
-            const ursprungLonLank = document.getElementById('ursprungLonLank');
             const ursprungLanDetalj = document.getElementById('ursprungLanDetalj');
             const annatUnderlagLabel = document.getElementById('annatUnderlagLabel');
             const annatUnderlag = document.getElementById('annatUnderlag');
+            const ursprungFritext = document.getElementById('ursprungFritext');
             const kycText = document.getElementById('kycText');
             const avtalText = document.getElementById('avtalText');
             const caseOutput = document.getElementById('caseOutput');
             const activityOutput = document.getElementById('activityOutput');
 
             const typeMap = {
-                swish: { behov: 'höja sin swishgräns', process: 'höjningen', oversikt: 'TF Swish', bankid: true },
-                overforing: { behov: 'göra en större överföring', process: 'överföringen', oversikt: 'TF Överföring', bankid: false },
-                betalning: { behov: 'göra en större betalning', process: 'betalningen', oversikt: 'TF Betalning', bankid: false },
-                utlands: { behov: 'göra en utlandsbetalning', process: 'utlandsbetalningen', oversikt: 'TF Utlandsbetalning', bankid: false },
-                fritext: { behov: '', process: '', oversikt: '', bankid: false }
+                swish: { behov: 'höja sin swishgräns', process: 'höjningen', bankid: true },
+                overforing: { behov: 'göra en större överföring', process: 'överföringen', bankid: false },
+                betalning: { behov: 'göra en större betalning', process: 'betalningen', bankid: false },
+                utlands: { behov: 'göra en utlandsbetalning', process: 'utlandsbetalningen', bankid: false },
+                fritext: { behov: '', process: '', bankid: false }
             };
 
             const handlingMap = {
-                kop: { phrase: 'göra ett köp på', desc: 'göra ett köp' },
-                overfora: { phrase: 'överföra', desc: 'överföra' },
-                betala: { phrase: 'betala', desc: 'betala' },
-                utlandsbetalning: { phrase: 'göra en utlandsbetalning på', desc: 'göra en utlandsbetalning' },
+                kop: { phrase: 'göra ett köp på', desc: 'köp' },
+                overfora: { phrase: 'överföra', desc: 'överföring' },
+                betala: { phrase: 'betala', desc: 'betalning' },
+                utlandsbetalning: { phrase: 'göra en utlandsbetalning på', desc: 'utlandsbetalning' },
                 fritext: { phrase: '', desc: '' }
             };
 
@@ -3194,9 +3195,9 @@
                 avseendeSpar.style.display = avseendeSelect.value === 'sparande' ? 'block' : 'none';
                 avseendeFritext.style.display = avseendeSelect.value === 'fritext' || (avseendeSelect.value === 'sparande' && avseendeSpar.value === 'Fritext') ? 'block' : 'none';
 
-                ursprungLonLank.style.display = ursprungSelect.value === 'lon' ? 'block' : 'none';
                 ursprungLanDetalj.style.display = ursprungSelect.value === 'lan' ? 'block' : 'none';
                 annatUnderlagLabel.style.display = ursprungSelect.value === 'annat' ? 'block' : 'none';
+                ursprungFritext.style.display = ursprungSelect.value === 'fritext' ? 'block' : 'none';
 
                 updateKycAvtal();
             }
@@ -3243,15 +3244,17 @@
 
                 let ursprungText = '';
                 if (ursprungSelect.value === 'lon') {
-                    ursprungText = `eget sparande av lön (vilket går att följa i ${ursprungLonLank.value})`;
+                    ursprungText = 'eget sparande av lön vilket går att följa i LÄNK';
                 } else if (ursprungSelect.value === 'lan') {
                     if (ursprungLanDetalj.value === 'skuldebrev') {
                         ursprungText = 'ett lån (skuldebrev inskickat som underlag)';
                     } else {
                         ursprungText = 'ett lån (finns inget upprättat skuldebrev, men finner det rimligt utifrån kundens berättelse)';
                     }
-                } else {
+                } else if (ursprungSelect.value === 'annat') {
                     ursprungText = `eget sparande i annat institut${annatUnderlag.checked ? ' (underlag inskickat)' : ''}`;
+                } else {
+                    ursprungText = ursprungFritext.value;
                 }
 
                 const sumText = isUtlands ? sum : `${sum} tkr`;
@@ -3265,8 +3268,19 @@ ${kycText.value}
 ${avtalText.value}`;
                 caseOutput.value = caseText;
 
-                const oversikt = `${info.oversikt} (${info.process} ${sumText})`;
-                const kommentar = `Hjälper kund ${handlingDesc} avseende ${avseendeText}. Pengarna kommer från ${ursprungText}.`;
+                let oversikt = '';
+                if (type === 'swish') {
+                    oversikt = `TF Swish ${sumText}`;
+                } else if (type === 'utlands' || handlingVal === 'utlandsbetalning') {
+                    oversikt = `Utlandsbetalning ${sumText}`;
+                } else if (type === 'overforing') {
+                    oversikt = `Överföring ${sumText}`;
+                } else if (type === 'betalning') {
+                    oversikt = `Betalning ${sumText}`;
+                } else {
+                    oversikt = `${handlingDesc} ${sumText}`.trim();
+                }
+                const kommentar = `Hjälper kund med ${handlingDesc} avseende ${avseendeText}.`;
                 activityOutput.value = `Översikt: ${oversikt}
 Kommentar: ${kommentar}`;
             }
@@ -3291,9 +3305,9 @@ Kommentar: ${kommentar}`;
                     avseendeSpar: avseendeSpar.value,
                     avseendeFritext: avseendeFritext.value,
                     ursprung: ursprungSelect.value,
-                    ursprungLonLank: ursprungLonLank.value,
                     ursprungLanDetalj: ursprungLanDetalj.value,
-                    annatUnderlag: annatUnderlag.checked
+                    annatUnderlag: annatUnderlag.checked,
+                    ursprungFritext: ursprungFritext.value
                 };
                 setLocalStorage('ksCaseWizardDraft', data);
             });
@@ -3316,9 +3330,9 @@ Kommentar: ${kommentar}`;
                 avseendeSpar.value = draft.avseendeSpar || 'Avanza';
                 avseendeFritext.value = draft.avseendeFritext || '';
                 ursprungSelect.value = draft.ursprung || 'lon';
-                ursprungLonLank.value = draft.ursprungLonLank || '';
                 ursprungLanDetalj.value = draft.ursprungLanDetalj || 'skuldebrev';
                 annatUnderlag.checked = draft.annatUnderlag || false;
+                ursprungFritext.value = draft.ursprungFritext || '';
             }
 
             updateDynamicFields();
