@@ -1,7 +1,7 @@
 {
-  "name": "ks-statistik",
+  "name": "kundservice-bank",
   "version": "1.0.0",
-  "description": "Kundservice statistik webapp",
+  "description": "Kundservice Bank webapp",
   "scripts": {
     "test": "echo \"No tests specified\""
   }

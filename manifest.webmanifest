@@ -1,7 +1,7 @@
 {
-  "name": "KS statistik",
-  "short_name": "KS statistik",
-  "description": "Kundservice statistik för LF Bergslagen",
+  "name": "Kundservice Bank",
+  "short_name": "Kundservice Bank",
+  "description": "Kundservice Bank för LF Bergslagen",
   "icons": [
       {
         "src": "android-chrome-192x192.png",

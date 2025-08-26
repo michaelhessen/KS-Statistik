@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KS Bank statistik - LF Bergslagen</title>
+    <title>Kundservice Bank - LF Bergslagen</title>
     
     <!-- Ikoner och manifest -->
     <link rel="icon" href="favicon-32x32.png">
@@ -149,7 +149,7 @@
         }
 
         .logo-img {
-            height: 40px;      /* justera 32–48px efter smak */
+            height: 60px;
             width: auto;
             display: block;
         }
@@ -834,17 +834,14 @@
     </style>
 </head>
 <body>
-    <!-- Header med logo och tema-toggle -->
+    <!-- Header med logo -->
     <header class="header">
         <div class="header-content">
            <div class="logo-title">
              <img src="logo.png" alt="Länsförsäkringar logotyp" class="logo-img">
-             <h1 class="title">KS Bank statistik</h1>
+             <h1 class="title">Kundservice Bank</h1>
         </div>
 
-            <button class="theme-toggle" id="themeToggle" aria-label="Växla mellan ljust och mörkt tema">
-                🌙
-            </button>
             <button id="settingsButton" class="icon-button" aria-label="Inställningar">⚙️</button>
         </div>
     </header>
@@ -1295,6 +1292,12 @@
 
         <!-- Flik: Inställningar -->
         <div id="content-installningar" class="tab-content">
+            <!-- Utseende -->
+            <div class="card">
+                <h2 class="card-title">Utseende</h2>
+                <button class="theme-toggle" id="themeToggle" aria-label="Växla mellan ljust och mörkt tema">🌙</button>
+            </div>
+
             <!-- Exempeldata -->
             <div class="card">
                 <h2 class="card-title">Exempeldata</h2>
@@ -1330,27 +1333,6 @@
                 </button>
             </div>
 
-            <!-- App-information -->
-            <div class="card">
-                <h2 class="card-title">Om applikationen</h2>
-                <div class="grid-2">
-                    <div>
-                        <strong>Version:</strong> 2.0
-                    </div>
-                    <div>
-                        <strong>Uppdaterad:</strong> December 2024
-                    </div>
-                </div>
-                <div class="mt-2">
-                    <strong>Ny funktionalitet:</strong>
-                    <ul style="margin-top: 0.5rem; padding-left: 1.5rem;">
-                        <li>Förbättrad målprogress som anpassar sig efter tidsomfång</li>
-                        <li>Reaktiva statistikgrafer och tabeller</li>
-                        <li>Förbättrad datafiltrering</li>
-                        <li>Exempeldatafunktion</li>
-                    </ul>
-                </div>
-            </div>
         </div>
     </main>
 
@@ -2698,7 +2680,7 @@
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `ks-statistik-${new Date().toISOString().split('T')[0]}.csv`;
+            link.download = `kundservice-bank-${new Date().toISOString().split('T')[0]}.csv`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -3367,7 +3349,7 @@ Kommentar: ${kommentar}`;
                 setLocalStorage('ksGoals', DEFAULT_GOALS);
             }
 
-            console.log('KS statistik app initierad - version 2.0');
+            console.log('Kundservice Bank app initierad - version 2.0');
         }
         
         // Starta appen när DOM är redo
