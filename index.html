@@ -3264,7 +3264,12 @@ ${avtalText.value}`;
                 } else {
                     oversikt = `${handlingDesc} ${sumText}`.trim();
                 }
-                const kommentar = `Hjälper kund med ${handlingComment}. Avseende ${avseendeText}.`;
+                let kommentar = '';
+                if (type === 'swish') {
+                    kommentar = `hjälper kund höja sin swishgräns tillfälligt, avseende ${avseendeText}.`;
+                } else {
+                    kommentar = `Hjälper kund med ${handlingComment}, avseende ${avseendeText}.`;
+                }
                 activityOutput.value = `Översikt: ${oversikt}
 Kommentar: ${kommentar}`;
             }
