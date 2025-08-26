@@ -231,6 +231,44 @@
         .tab-content.active {
             display: block;
         }
+
+        /* Samtalsflikar */
+        .call-tab-button {
+            background: none;
+            border: none;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+            border-bottom: 2px solid transparent;
+            transition: var(--transition);
+        }
+
+        .call-tab-button.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+            font-weight: 600;
+        }
+
+        .call-tab-button:hover:not(.active) {
+            color: var(--color-text);
+            background: var(--color-bg-alt);
+        }
+
+        .call-tab-content {
+            display: none;
+        }
+
+        .call-tab-content.active {
+            display: block;
+        }
+
+        .call-tabs {
+            display: flex;
+            gap: 1rem;
+            border-bottom: 1px solid var(--color-border);
+            margin-bottom: 1rem;
+        }
         
         /* Kort-komponenter */
         .card {
@@ -864,13 +902,39 @@
                 </form>
             </div>
 
-            <!-- Lista över senaste samtal -->
+            <!-- Samtal listor -->
             <div class="card">
-                <h2 class="card-title">Senaste samtal</h2>
-                <div class="form-group">
-                    <input type="text" id="callSearch" class="form-control" placeholder="Sök i samtal...">
+                <div class="call-tabs">
+                    <button class="call-tab-button active" data-tab="recent">Senaste samtal</button>
+                    <button class="call-tab-button" data-tab="all">Alla samtal</button>
                 </div>
-                <div id="recentCalls"></div>
+                <div id="call-recent" class="call-tab-content active">
+                    <div class="form-group">
+                        <input type="text" id="callSearch" class="form-control" placeholder="Sök i samtal...">
+                    </div>
+                    <div id="recentCalls"></div>
+                </div>
+                <div id="call-all" class="call-tab-content">
+                    <div class="filter-row">
+                        <input type="date" id="filterStartDate" class="form-control">
+                        <input type="date" id="filterEndDate" class="form-control">
+                        <select id="filterCategory" class="form-control">
+                            <option value="">Alla kategorier</option>
+                            <option value="Guldkund">Guldkund</option>
+                            <option value="Bankärende">Bankärende</option>
+                        </select>
+                        <select id="filterRating" class="form-control">
+                            <option value="">Alla betyg</option>
+                            <option value="1">Minst 1</option>
+                            <option value="2">Minst 2</option>
+                            <option value="3">Minst 3</option>
+                            <option value="4">Minst 4</option>
+                            <option value="5">Endast 5</option>
+                        </select>
+                    </div>
+                    <div id="allCalls"></div>
+                    <button id="loadMoreCalls" class="btn btn-secondary" style="display:none;">Visa mer</button>
+                </div>
             </div>
         </div>
 
@@ -1150,6 +1214,7 @@
         let currentChart = null;
         let digitalToggleState = false; // false = "Tid utanför digitala", true = "Digitala"
         let editingCallId = null;
+        let allCallsPage = 1;
         
         // Standardmål per pass (arbetsdag)
         const DEFAULT_GOALS = {
@@ -1353,12 +1418,49 @@
                         updateStatistics();
                     } else if (targetTab === 'samtal') {
                         updateRecentCalls();
+                        updateAllCalls();
                     } else if (targetTab === 'installningar') {
                         // Inställningar-fliken kräver ingen specifik uppdatering
                         console.log('Inställningar-flik aktiverad');
                     }
                 });
             });
+        }
+
+        function initCallTabs() {
+            const buttons = document.querySelectorAll('.call-tab-button');
+            const contents = document.querySelectorAll('.call-tab-content');
+
+            buttons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const target = button.dataset.tab;
+                    buttons.forEach(b => b.classList.remove('active'));
+                    contents.forEach(c => c.classList.remove('active'));
+                    button.classList.add('active');
+                    document.getElementById(`call-${target}`).classList.add('active');
+                    if (target === 'recent') {
+                        updateRecentCalls();
+                    } else {
+                        allCallsPage = 1;
+                        updateAllCalls();
+                    }
+                });
+            });
+
+            document.getElementById('loadMoreCalls').addEventListener('click', () => {
+                allCallsPage++;
+                updateAllCalls();
+            });
+
+            ['filterStartDate','filterEndDate','filterCategory','filterRating'].forEach(id => {
+                const el = document.getElementById(id);
+                el.addEventListener('change', () => {
+                    allCallsPage = 1;
+                    updateAllCalls();
+                });
+            });
+
+            updateAllCalls();
         }
         
         // ====================
@@ -1446,9 +1548,10 @@
 
             // Sök i samtal
             searchInput.addEventListener('input', updateRecentCalls);
-            
+
             // Initial uppdatering
             updateRecentCalls();
+            updateAllCalls();
         }
         
         function handleCallSubmit(e) {
@@ -1507,6 +1610,8 @@
             
             // Uppdatera lista
             updateRecentCalls();
+            allCallsPage = 1;
+            updateAllCalls();
             
             // Uppdatera räknare om vi är på säljmål-fliken
             if (currentTab === 'saljmal') {
@@ -1535,7 +1640,9 @@
             setLocalStorage('ksCalls', calls);
             showToast('Senaste samtalet har tagits bort');
             updateRecentCalls();
-            
+            allCallsPage = 1;
+            updateAllCalls();
+
             if (currentTab === 'saljmal') {
                 updateSalesCounters();
             }
@@ -1587,10 +1694,44 @@
                     cancelEditCall();
                 }
                 updateRecentCalls();
+                allCallsPage = 1;
+                updateAllCalls();
                 if (currentTab === 'saljmal') {
                     updateSalesCounters();
                 }
             }
+        }
+
+        function renderCall(call) {
+            const dateTime = formatDateTime(call.timestamp);
+            const stars = (rating) => '★'.repeat(rating || 0) + '☆'.repeat(5 - (rating || 0));
+
+            return `
+                <div class="card" style="margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                        <div>
+                            <strong>${call.typ}</strong>
+                            ${call.kategori ? `<span class="tag ${call.kategori === 'Guldkund' ? 'tag-guldkund' : 'tag-kanal'}">${call.kategori}</span>` : ''}
+                        </div>
+                        <small style="color: var(--color-text-muted);">${dateTime.full}</small>
+                    </div>
+                    <div class="grid-2" style="margin-bottom: 0.5rem;">
+                        <div><small>Generellt: ${stars(call.stjarna_generellt)}</small></div>
+                        <div><small>Kund: ${stars(call.stjarna_kund)}</small></div>
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <small>Min insats: ${stars(call.stjarna_insats)}</small>
+                        ${call.samtalstid_min ? `<small style="float: right;">${call.samtalstid_min} min</small>` : ''}
+                    </div>
+                    ${call.beskrivning ? `<div style="margin-bottom: 0.25rem;"><small><strong>Beskrivning:</strong> ${call.beskrivning}</small></div>` : ''}
+                    ${call.vad_gick_bra ? `<div style="margin-bottom: 0.25rem;"><small><strong>Bra:</strong> ${call.vad_gick_bra}</small></div>` : ''}
+                    ${call.forbattra ? `<div><small><strong>Förbättra:</strong> ${call.forbattra}</small></div>` : ''}
+                    <div class="call-actions">
+                        <button class="btn btn-secondary btn-small edit-call" data-id="${call.id}">Ändra</button>
+                        <button class="btn btn-danger btn-small delete-call" data-id="${call.id}">Ta bort</button>
+                    </div>
+                </div>
+            `;
         }
 
         function updateRecentCalls() {
@@ -1616,37 +1757,7 @@
                 return;
             }
             
-            const html = filteredCalls.map(call => {
-                const dateTime = formatDateTime(call.timestamp);
-                const stars = (rating) => '★'.repeat(rating || 0) + '☆'.repeat(5 - (rating || 0));
-                
-                return `
-                    <div class="card" style="margin-bottom: 1rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                            <div>
-                                <strong>${call.typ}</strong>
-                                ${call.kategori ? `<span class="tag ${call.kategori === 'Guldkund' ? 'tag-guldkund' : 'tag-kanal'}">${call.kategori}</span>` : ''}
-                            </div>
-                            <small style="color: var(--color-text-muted);">${dateTime.full}</small>
-                        </div>
-                        <div class="grid-2" style="margin-bottom: 0.5rem;">
-                            <div><small>Generellt: ${stars(call.stjarna_generellt)}</small></div>
-                            <div><small>Kund: ${stars(call.stjarna_kund)}</small></div>
-                        </div>
-                          <div style="margin-bottom: 0.5rem;">
-                              <small>Min insats: ${stars(call.stjarna_insats)}</small>
-                              ${call.samtalstid_min ? `<small style="float: right;">${call.samtalstid_min} min</small>` : ''}
-                          </div>
-                          ${call.beskrivning ? `<div style="margin-bottom: 0.25rem;"><small><strong>Beskrivning:</strong> ${call.beskrivning}</small></div>` : ''}
-                          ${call.vad_gick_bra ? `<div style="margin-bottom: 0.25rem;"><small><strong>Bra:</strong> ${call.vad_gick_bra}</small></div>` : ''}
-                          ${call.forbattra ? `<div><small><strong>Förbättra:</strong> ${call.forbattra}</small></div>` : ''}
-                          <div class="call-actions">
-                            <button class="btn btn-secondary btn-small edit-call" data-id="${call.id}">Ändra</button>
-                            <button class="btn btn-danger btn-small delete-call" data-id="${call.id}">Ta bort</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+            const html = filteredCalls.map(renderCall).join('');
 
             container.innerHTML = html;
 
@@ -1656,6 +1767,59 @@
             container.querySelectorAll('.delete-call').forEach(btn => {
                 btn.addEventListener('click', () => deleteCall(btn.dataset.id));
             });
+        }
+
+        function updateAllCalls() {
+            const calls = getLocalStorage('ksCalls', []);
+            const container = document.getElementById('allCalls');
+
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+            const category = document.getElementById('filterCategory').value;
+            const rating = document.getElementById('filterRating').value;
+
+            let filtered = [...calls];
+
+            if (startDate) {
+                const start = new Date(startDate);
+                filtered = filtered.filter(c => new Date(c.timestamp) >= start);
+            }
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23,59,59,999);
+                filtered = filtered.filter(c => new Date(c.timestamp) <= end);
+            }
+            if (category) {
+                filtered = filtered.filter(c => c.kategori === category);
+            }
+            if (rating) {
+                const r = parseInt(rating);
+                filtered = filtered.filter(c => (c.stjarna_generellt || 0) >= r);
+            }
+
+            filtered.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            const endIndex = allCallsPage * 10;
+            const pageCalls = filtered.slice(0, endIndex);
+
+            if (pageCalls.length === 0) {
+                container.innerHTML = '<p class="text-center">Inga samtal hittades.</p>';
+            } else {
+                container.innerHTML = pageCalls.map(renderCall).join('');
+                container.querySelectorAll('.edit-call').forEach(btn => {
+                    btn.addEventListener('click', () => startEditCall(btn.dataset.id));
+                });
+                container.querySelectorAll('.delete-call').forEach(btn => {
+                    btn.addEventListener('click', () => deleteCall(btn.dataset.id));
+                });
+            }
+
+            const moreBtn = document.getElementById('loadMoreCalls');
+            if (filtered.length > endIndex) {
+                moreBtn.style.display = 'block';
+            } else {
+                moreBtn.style.display = 'none';
+            }
         }
         
         // ====================
@@ -2590,6 +2754,7 @@
                     showToast('Data har importerats');
 
                     updateRecentCalls();
+                    updateAllCalls();
                     updateSalesCounters();
                     updateStatistics();
 
@@ -2750,9 +2915,10 @@
             setLocalStorage('ksSales', [...existingSales, ...exampleSales]);
             
             showToast(`Exempeldata tillagd: ${exampleCalls.length} samtal och ${exampleSales.length} säljpunkter`);
-            
+
             // Uppdatera alla vyer
             updateRecentCalls();
+            updateAllCalls();
             updateSalesCounters();
             updateStatistics();
         }
@@ -2783,9 +2949,10 @@
             document.getElementById('deleteAllData').disabled = true;
             
             showToast('All data har raderats');
-            
+
             // Uppdatera alla vyer
             updateRecentCalls();
+            updateAllCalls();
             updateSalesCounters();
             updateStatistics();
         }
@@ -2798,6 +2965,7 @@
             await initDB();
             initTheme();
             initTabs();
+            initCallTabs();
             initStarRatings();
             initCallForm();
             initSalesGoals();
