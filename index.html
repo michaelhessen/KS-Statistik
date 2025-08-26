@@ -836,6 +836,11 @@
 
                     <!-- Fritextrutor -->
                     <div class="form-group">
+                        <label for="beskrivning" class="form-label">Beskriv samtalet</label>
+                        <textarea id="beskrivning" name="beskrivning" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
                         <label for="vadGickBra" class="form-label">Vad gick bra?</label>
                         <textarea id="vadGickBra" name="vad_gick_bra" class="form-control" rows="3"></textarea>
                     </div>
@@ -1456,6 +1461,7 @@
                 stjarna_generellt: parseInt(formData.get('stjarna_generellt')) || null,
                 stjarna_kund: parseInt(formData.get('stjarna_kund')) || null,
                 stjarna_insats: parseInt(formData.get('stjarna_insats')) || null,
+                beskrivning: formData.get('beskrivning') || '',
                 vad_gick_bra: formData.get('vad_gick_bra') || '',
                 forbattra: formData.get('forbattra') || '',
                 samtalstid_min: formData.get('samtalstid_min') ? parseInt(formData.get('samtalstid_min')) : null
@@ -1551,6 +1557,7 @@
             setStarRating('stjarna_generellt', call.stjarna_generellt);
             setStarRating('stjarna_kund', call.stjarna_kund);
             setStarRating('stjarna_insats', call.stjarna_insats);
+            document.getElementById('beskrivning').value = call.beskrivning || '';
             document.getElementById('vadGickBra').value = call.vad_gick_bra;
             document.getElementById('forbattra').value = call.forbattra;
             document.getElementById('samtalstid').value = call.samtalstid_min || '';
@@ -1595,7 +1602,8 @@
             const filteredCalls = calls
                 .filter(call => {
                     if (!searchTerm) return true;
-                    return call.vad_gick_bra.toLowerCase().includes(searchTerm) ||
+                    return (call.beskrivning && call.beskrivning.toLowerCase().includes(searchTerm)) ||
+                           call.vad_gick_bra.toLowerCase().includes(searchTerm) ||
                            call.forbattra.toLowerCase().includes(searchTerm) ||
                            call.typ.toLowerCase().includes(searchTerm) ||
                            (call.kategori && call.kategori.toLowerCase().includes(searchTerm));
@@ -1625,13 +1633,14 @@
                             <div><small>Generellt: ${stars(call.stjarna_generellt)}</small></div>
                             <div><small>Kund: ${stars(call.stjarna_kund)}</small></div>
                         </div>
-                        <div style="margin-bottom: 0.5rem;">
-                            <small>Min insats: ${stars(call.stjarna_insats)}</small>
-                            ${call.samtalstid_min ? `<small style="float: right;">${call.samtalstid_min} min</small>` : ''}
-                        </div>
-                        ${call.vad_gick_bra ? `<div style="margin-bottom: 0.25rem;"><small><strong>Bra:</strong> ${call.vad_gick_bra}</small></div>` : ''}
-                        ${call.forbattra ? `<div><small><strong>Förbättra:</strong> ${call.forbattra}</small></div>` : ''}
-                        <div class="call-actions">
+                          <div style="margin-bottom: 0.5rem;">
+                              <small>Min insats: ${stars(call.stjarna_insats)}</small>
+                              ${call.samtalstid_min ? `<small style="float: right;">${call.samtalstid_min} min</small>` : ''}
+                          </div>
+                          ${call.beskrivning ? `<div style="margin-bottom: 0.25rem;"><small><strong>Beskrivning:</strong> ${call.beskrivning}</small></div>` : ''}
+                          ${call.vad_gick_bra ? `<div style="margin-bottom: 0.25rem;"><small><strong>Bra:</strong> ${call.vad_gick_bra}</small></div>` : ''}
+                          ${call.forbattra ? `<div><small><strong>Förbättra:</strong> ${call.forbattra}</small></div>` : ''}
+                          <div class="call-actions">
                             <button class="btn btn-secondary btn-small edit-call" data-id="${call.id}">Ändra</button>
                             <button class="btn btn-danger btn-small delete-call" data-id="${call.id}">Ta bort</button>
                         </div>
@@ -2376,12 +2385,13 @@
             const lines = [];
 
             if (calls.length > 0) {
-                lines.push('dataset,typ,kategori,vad_gick_bra,forbattra,stjarna_generellt,stjarna_kund,stjarna_insats,samtalstid_min,timestamp');
+                lines.push('dataset,typ,kategori,beskrivning,vad_gick_bra,forbattra,stjarna_generellt,stjarna_kund,stjarna_insats,samtalstid_min,timestamp');
                 calls.forEach(c => {
                     lines.push([
                         'call',
                         escape(c.typ),
                         escape(c.kategori),
+                        escape(c.beskrivning),
                         escape(c.vad_gick_bra),
                         escape(c.forbattra),
                         escape(c.stjarna_generellt),
@@ -2508,10 +2518,11 @@
             if (lines[index]?.startsWith('dataset,typ,kategori')) {
                 index++;
                 while (index < lines.length && lines[index].trim() !== '') {
-                    const [_, typ, kategori, vad_gick_bra, forbattra, stjarna_generellt, stjarna_kund, stjarna_insats, samtalstid_min, timestamp] = parseCSVLine(lines[index]);
+                    const [_, typ, kategori, beskrivning, vad_gick_bra, forbattra, stjarna_generellt, stjarna_kund, stjarna_insats, samtalstid_min, timestamp] = parseCSVLine(lines[index]);
                     calls.push({
                         typ,
                         kategori,
+                        beskrivning,
                         vad_gick_bra,
                         forbattra,
                         stjarna_generellt: Number(stjarna_generellt),
@@ -2646,6 +2657,13 @@
                         stjarna_generellt: Math.floor(Math.random() * 2) + 4, // 4-5 stjärnor
                         stjarna_kund: Math.floor(Math.random() * 3) + 3, // 3-5 stjärnor
                         stjarna_insats: Math.floor(Math.random() * 2) + 4, // 4-5 stjärnor
+                        beskrivning: [
+                            'Kund ringde angående kontofrågor',
+                            'Samtal om lånevillkor',
+                            'Allmänt kundserviceärende',
+                            'Uppföljning på tidigare ärende',
+                            'Diskussion om banktjänster'
+                        ][Math.floor(Math.random() * 5)],
                         vad_gick_bra: [
                             'Kunden var nöjd med servicen',
                             'Löste kundens problem snabbt',
