@@ -3158,11 +3158,11 @@
             };
 
             const handlingMap = {
-                kop: { phrase: 'göra ett köp på', desc: 'köp' },
-                overfora: { phrase: 'överföra', desc: 'överföring' },
-                betala: { phrase: 'betala', desc: 'betalning' },
-                utlandsbetalning: { phrase: 'göra en utlandsbetalning på', desc: 'utlandsbetalning' },
-                fritext: { phrase: '', desc: '' }
+                kop: { phrase: 'göra ett köp på', desc: 'köp', comment: 'ett köp' },
+                overfora: { phrase: 'överföra', desc: 'överföring', comment: 'en överföring' },
+                betala: { phrase: 'betala', desc: 'betalning', comment: 'en betalning' },
+                utlandsbetalning: { phrase: 'göra en utlandsbetalning på', desc: 'utlandsbetalning', comment: 'en utlandsbetalning' },
+                fritext: { phrase: '', desc: '', comment: '' }
             };
 
            function updateDynamicFields() {
@@ -3201,20 +3201,22 @@
 
                 let handlingText = handlingMap[handlingVal].phrase;
                 let handlingDesc = handlingMap[handlingVal].desc;
+                let handlingComment = handlingMap[handlingVal].comment;
                 if (handlingVal === 'fritext') {
                     handlingText = handlingFritext.value.trim();
                     handlingDesc = handlingText;
+                    handlingComment = handlingText;
                 }
 
                 let avseendeText = '';
                 if (avseendeSelect.value === 'bilkop') {
-                    avseendeText = `ett bilköp (${avseendeBilkop.value})`;
+                    avseendeText = `ett bilköp, ${avseendeBilkop.value}`;
                 } else if (avseendeSelect.value === 'sparande') {
                     const val = avseendeSpar.value;
                     if (val === 'Fritext') {
-                        avseendeText = `sparande i annat institut (${avseendeFritext.value})`;
+                        avseendeText = `sparande i annat institut, ${avseendeFritext.value}`;
                     } else {
-                        avseendeText = `sparande i annat institut (${val})`;
+                        avseendeText = `sparande i annat institut, ${val}`;
                     }
                 } else if (avseendeSelect.value === 'fritext') {
                     avseendeText = avseendeFritext.value;
@@ -3229,12 +3231,12 @@
                     ursprungText = 'eget sparande av lön vilket går att följa i LÄNK';
                 } else if (ursprungSelect.value === 'lan') {
                     if (ursprungLanDetalj.value === 'skuldebrev') {
-                        ursprungText = 'ett lån (skuldebrev inskickat som underlag)';
+                        ursprungText = 'ett lån, skuldebrev inskickat som underlag';
                     } else {
-                        ursprungText = 'ett lån (finns inget upprättat skuldebrev, men finner det rimligt utifrån kundens berättelse)';
+                        ursprungText = 'ett lån, finns inget upprättat skuldebrev, men finner det rimligt utifrån kundens berättelse';
                     }
                 } else if (ursprungSelect.value === 'annat') {
-                    ursprungText = `eget sparande i annat institut${annatUnderlag.checked ? ' (underlag inskickat)' : ''}`;
+                    ursprungText = `eget sparande i annat institut${annatUnderlag.checked ? ', underlag inskickat' : ''}`;
                 } else {
                     ursprungText = ursprungFritext.value;
                 }
@@ -3262,7 +3264,7 @@ ${avtalText.value}`;
                 } else {
                     oversikt = `${handlingDesc} ${sumText}`.trim();
                 }
-                const kommentar = `Hjälper kund med ${handlingDesc} avseende ${avseendeText}.`;
+                const kommentar = `Hjälper kund med ${handlingComment}. Avseende ${avseendeText}.`;
                 activityOutput.value = `Översikt: ${oversikt}
 Kommentar: ${kommentar}`;
             }
