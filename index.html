@@ -172,8 +172,25 @@
             color: var(--color-text);
             font-size: 1.2rem;
         }
-        
+
         .theme-toggle:hover {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .icon-button {
+            background: var(--color-bg-alt);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-small);
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--color-text);
+            font-size: 1.2rem;
+            margin-left: 0.5rem;
+        }
+
+        .icon-button:hover {
             background: var(--color-primary);
             color: white;
         }
@@ -264,6 +281,43 @@
         }
 
         .call-tabs {
+            display: flex;
+            gap: 1rem;
+            border-bottom: 1px solid var(--color-border);
+            margin-bottom: 1rem;
+        }
+
+        .subtab-button {
+            background: none;
+            border: none;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+            border-bottom: 2px solid transparent;
+            transition: var(--transition);
+        }
+
+        .subtab-button.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+            font-weight: 600;
+        }
+
+        .subtab-button:hover:not(.active) {
+            color: var(--color-text);
+            background: var(--color-bg-alt);
+        }
+
+        .subtab-content {
+            display: none;
+        }
+
+        .subtab-content.active {
+            display: block;
+        }
+
+        .subtabs {
             display: flex;
             gap: 1rem;
             border-bottom: 1px solid var(--color-border);
@@ -791,22 +845,27 @@
             <button class="theme-toggle" id="themeToggle" aria-label="Växla mellan ljust och mörkt tema">
                 🌙
             </button>
+            <button id="settingsButton" class="icon-button" aria-label="Inställningar">⚙️</button>
         </div>
     </header>
 
     <!-- Navigation tabs -->
     <nav class="nav-tabs">
         <div class="nav-tabs-content">
-            <button class="tab-button active" data-tab="samtal" id="tab-samtal">Samtal</button>
-            <button class="tab-button" data-tab="saljmal" id="tab-saljmal">Säljmål</button>
-            <button class="tab-button" data-tab="statistik" id="tab-statistik">Statistik</button>
-            <button class="tab-button" data-tab="installningar" id="tab-installningar">Inställningar</button>
+            <button class="tab-button active" data-tab="logg" id="tab-logg">Logg</button>
+            <button class="tab-button" data-tab="arbetsstod" id="tab-arbetsstod">Arbetsstöd</button>
         </div>
     </nav>
 
     <main class="main-content">
-        <!-- Flik 1: Samtal -->
-        <div id="content-samtal" class="tab-content active">
+        <div id="content-logg" class="tab-content active">
+            <nav class="subtabs">
+                <button class="subtab-button active" data-subtab="samtal" id="subtab-samtal">Samtal</button>
+                <button class="subtab-button" data-subtab="saljmal" id="subtab-saljmal">Säljmål</button>
+                <button class="subtab-button" data-subtab="statistik" id="subtab-statistik">Statistik</button>
+            </nav>
+            <!-- Subflik: Samtal -->
+            <div id="content-samtal" class="subtab-content active">
             <div class="card">
                 <h2 class="card-title">Logga samtal</h2>
                 <form id="callForm">
@@ -938,8 +997,8 @@
             </div>
         </div>
 
-        <!-- Flik 2: Säljmål -->
-        <div id="content-saljmal" class="tab-content">
+        <!-- Subflik: Säljmål -->
+        <div id="content-saljmal" class="subtab-content">
             <div class="card">
                 <h2 class="card-title">Säljmål - snabb loggning</h2>
                 
@@ -1019,8 +1078,8 @@
             </div>
         </div>
 
-        <!-- Flik 3: Statistik -->
-        <div id="content-statistik" class="tab-content">
+        <!-- Subflik: Statistik -->
+        <div id="content-statistik" class="subtab-content">
             <!-- Filter panel -->
             <div class="filter-panel">
                 <h3 class="mb-2">Filter och inställningar</h3>
@@ -1140,8 +1199,100 @@
                 </div>
             </div>
         </div>
+        </div>
 
-        <!-- Flik 4: Inställningar -->
+        <div id="content-arbetsstod" class="tab-content">
+            <nav class="subtabs">
+                <button class="subtab-button active" data-subtab="skriv-arende" id="tab-skriv-arende">Skriv ärende</button>
+            </nav>
+            <div id="panel-skriv-arende" class="subtab-content active">
+                <div class="card">
+                    <h2 class="card-title">Skriv ärende</h2>
+                    <form id="caseWizardForm">
+                        <div class="form-group">
+                            <label class="form-label">1. Vad avser ärendet?</label>
+                            <div class="radio-group">
+                                <label class="radio-item"><input type="radio" name="caseType" value="swish" checked><span>Swishhöjning</span></label>
+                                <label class="radio-item"><input type="radio" name="caseType" value="overforing"><span>Överföring</span></label>
+                                <label class="radio-item"><input type="radio" name="caseType" value="betalning"><span>Betalning</span></label>
+                                <label class="radio-item"><input type="radio" name="caseType" value="utlands"><span>Utlandsbetalning</span></label>
+                                <label class="radio-item"><input type="radio" name="caseType" value="fritext"><span>Fritext</span></label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">2. Handling och belopp</label>
+                            <select id="handling" class="form-control">
+                                <option value="kop">göra ett köp</option>
+                                <option value="overfora">överföra</option>
+                                <option value="betala">betala</option>
+                                <option value="utlandsbetalning">göra en utlandsbetalning</option>
+                                <option value="fritext">fritext</option>
+                            </select>
+                            <input type="text" id="handlingFritext" class="form-control" placeholder="Fritext" style="display:none; margin-top:0.5rem;">
+                            <input type="number" id="summa" class="form-control" placeholder="Belopp i tkr" min="0" style="margin-top:0.5rem;">
+                            <input type="text" id="summaUtland" class="form-control" placeholder="Belopp och valuta" style="display:none; margin-top:0.5rem;">
+                            <input type="text" id="utlandsLand" class="form-control" placeholder="Land" style="display:none; margin-top:0.5rem;">
+                        </div>
+                        <div class="form-group">
+                            <label for="avseende" class="form-label">Avseende</label>
+                            <select id="avseende" class="form-control">
+                                <option value="">Välj...</option>
+                                <option value="bilkop">Bilköp</option>
+                                <option value="sparande">Sparande i annat institut</option>
+                                <option value="fritext">Fritext</option>
+                            </select>
+                            <select id="avseendeBilkop" class="form-control" style="display:none; margin-top:0.5rem;">
+                                <option value="från privatperson">från privatperson</option>
+                                <option value="från bilhandlare">från bilhandlare</option>
+                            </select>
+                            <select id="avseendeSpar" class="form-control" style="display:none; margin-top:0.5rem;">
+                                <option value="Avanza">Avanza</option>
+                                <option value="Nordnet">Nordnet</option>
+                                <option value="Fritext">Fritext</option>
+                            </select>
+                            <input id="avseendeFritext" class="form-control" placeholder="Fritext" style="display:none; margin-top:0.5rem;">
+                        </div>
+                        <div class="form-group">
+                            <label for="ursprung" class="form-label">3. Finansieringens ursprung</label>
+                            <select id="ursprung" class="form-control">
+                                <option value="lon">Eget sparande av lön</option>
+                                <option value="lan">Lån</option>
+                                <option value="annat">Eget sparande i annat institut</option>
+                            </select>
+                            <input id="ursprungLonLank" class="form-control" placeholder="Spårning i LÄNK" style="display:none; margin-top:0.5rem;">
+                            <select id="ursprungLanDetalj" class="form-control" style="display:none; margin-top:0.5rem;">
+                                <option value="skuldebrev">skuldebrev inskickat som underlag</option>
+                                <option value="inget">finns inget skuldebrev</option>
+                            </select>
+                            <label id="annatUnderlagLabel" style="display:none; margin-top:0.5rem;">
+                                <input type="checkbox" id="annatUnderlag"> underlag inskickat
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">4. KYC</label>
+                            <textarea id="kycText" class="form-control" rows="2" readonly></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">5. Avtal</label>
+                            <textarea id="avtalText" class="form-control" rows="2" readonly></textarea>
+                        </div>
+                        <button type="button" id="generateCase" class="btn btn-primary">Generera</button>
+                    </form>
+                    <div class="form-group">
+                        <label for="caseOutput" class="form-label">Ärende</label>
+                        <textarea id="caseOutput" class="form-control" rows="6"></textarea>
+                        <button type="button" id="copyCaseBtn" class="btn btn-secondary" style="margin-top:0.5rem;">Kopiera</button>
+                    </div>
+                    <div class="form-group">
+                        <label for="activityOutput" class="form-label">Aktivitet</label>
+                        <textarea id="activityOutput" class="form-control" rows="4"></textarea>
+                        <button type="button" id="copyActivityBtn" class="btn btn-secondary" style="margin-top:0.5rem;">Kopiera</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flik: Inställningar -->
         <div id="content-installningar" class="tab-content">
             <!-- Exempeldata -->
             <div class="card">
@@ -1210,7 +1361,8 @@
         // GLOBALA VARIABLER OCH KONFIGURATION
         // ====================
         
-        let currentTab = 'samtal';
+        let currentTab = 'logg';
+        let currentLoggTab = 'samtal';
         let currentChart = null;
         let digitalToggleState = false; // false = "Tid utanför digitala", true = "Digitala"
         let editingCallId = null;
@@ -1397,34 +1549,64 @@
         function initTabs() {
             const tabButtons = document.querySelectorAll('.tab-button');
             const tabContents = document.querySelectorAll('.tab-content');
-            
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const targetTab = button.getAttribute('data-tab');
-                    
-                    // Uppdatera aktiva tillstånd
-                    tabButtons.forEach(b => b.classList.remove('active'));
-                    tabContents.forEach(c => c.classList.remove('active'));
-                    
-                    button.classList.add('active');
-                    document.getElementById(`content-${targetTab}`).classList.add('active');
-                    
-                    currentTab = targetTab;
-                    
-                    // Uppdatera specifikt flikinnehåll
-                    if (targetTab === 'saljmal') {
-                        updateSalesCounters();
-                    } else if (targetTab === 'statistik') {
-                        updateStatistics();
-                    } else if (targetTab === 'samtal') {
+
+            function activateTab(tabId) {
+                tabButtons.forEach(b => b.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+
+                const btn = document.querySelector(`.tab-button[data-tab="${tabId}"]`);
+                if (btn) btn.classList.add('active');
+
+                const content = document.getElementById(`content-${tabId}`);
+                if (content) content.classList.add('active');
+
+                currentTab = tabId;
+
+                if (tabId === 'logg') {
+                    if (currentLoggTab === 'samtal') {
                         updateRecentCalls();
                         updateAllCalls();
-                    } else if (targetTab === 'installningar') {
-                        // Inställningar-fliken kräver ingen specifik uppdatering
-                        console.log('Inställningar-flik aktiverad');
+                    } else if (currentLoggTab === 'saljmal') {
+                        updateSalesCounters();
+                    } else if (currentLoggTab === 'statistik') {
+                        updateStatistics();
                     }
-                });
+                }
+            }
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => activateTab(button.dataset.tab));
             });
+
+            document.getElementById('settingsButton').addEventListener('click', () => activateTab('installningar'));
+
+            activateTab('logg');
+            window.activateTab = activateTab;
+        }
+
+        function initLoggTabs() {
+            const buttons = document.querySelectorAll('#content-logg .subtab-button');
+            const contents = document.querySelectorAll('#content-logg .subtab-content');
+
+            function activate(id) {
+                buttons.forEach(b => b.classList.remove('active'));
+                contents.forEach(c => c.classList.remove('active'));
+                document.querySelector(`#content-logg .subtab-button[data-subtab="${id}"]`).classList.add('active');
+                document.getElementById(`content-${id}`).classList.add('active');
+                currentLoggTab = id;
+
+                if (id === 'samtal') {
+                    updateRecentCalls();
+                    updateAllCalls();
+                } else if (id === 'saljmal') {
+                    updateSalesCounters();
+                } else if (id === 'statistik') {
+                    updateStatistics();
+                }
+            }
+
+            buttons.forEach(b => b.addEventListener('click', () => activate(b.dataset.subtab)));
+            activate('samtal');
         }
 
         function initCallTabs() {
@@ -1614,7 +1796,7 @@
             updateAllCalls();
             
             // Uppdatera räknare om vi är på säljmål-fliken
-            if (currentTab === 'saljmal') {
+            if (currentTab === 'logg' && currentLoggTab === 'saljmal') {
                 updateSalesCounters();
             }
         }
@@ -1643,7 +1825,7 @@
             allCallsPage = 1;
             updateAllCalls();
 
-            if (currentTab === 'saljmal') {
+            if (currentTab === 'logg' && currentLoggTab === 'saljmal') {
                 updateSalesCounters();
             }
         }
@@ -1696,7 +1878,7 @@
                 updateRecentCalls();
                 allCallsPage = 1;
                 updateAllCalls();
-                if (currentTab === 'saljmal') {
+                if (currentTab === 'logg' && currentLoggTab === 'saljmal') {
                     updateSalesCounters();
                 }
             }
@@ -2956,6 +3138,197 @@
             updateSalesCounters();
             updateStatistics();
         }
+
+        // ====================
+        // ARBETSSTÖD
+        // ====================
+
+        function initArbetsstod() {
+            const form = document.getElementById('caseWizardForm');
+            if (!form) return;
+
+           const handlingSelect = document.getElementById('handling');
+           const handlingFritext = document.getElementById('handlingFritext');
+            const sumInput = document.getElementById('summa');
+            const sumUtland = document.getElementById('summaUtland');
+            const utlandsLand = document.getElementById('utlandsLand');
+           const avseendeSelect = document.getElementById('avseende');
+           const avseendeBilkop = document.getElementById('avseendeBilkop');
+            const avseendeSpar = document.getElementById('avseendeSpar');
+            const avseendeFritext = document.getElementById('avseendeFritext');
+            const ursprungSelect = document.getElementById('ursprung');
+            const ursprungLonLank = document.getElementById('ursprungLonLank');
+            const ursprungLanDetalj = document.getElementById('ursprungLanDetalj');
+            const annatUnderlagLabel = document.getElementById('annatUnderlagLabel');
+            const annatUnderlag = document.getElementById('annatUnderlag');
+            const kycText = document.getElementById('kycText');
+            const avtalText = document.getElementById('avtalText');
+            const caseOutput = document.getElementById('caseOutput');
+            const activityOutput = document.getElementById('activityOutput');
+
+            const typeMap = {
+                swish: { behov: 'höja sin swishgräns', process: 'höjningen', oversikt: 'TF Swish', bankid: true },
+                overforing: { behov: 'göra en större överföring', process: 'överföringen', oversikt: 'TF Överföring', bankid: false },
+                betalning: { behov: 'göra en större betalning', process: 'betalningen', oversikt: 'TF Betalning', bankid: false },
+                utlands: { behov: 'göra en utlandsbetalning', process: 'utlandsbetalningen', oversikt: 'TF Utlandsbetalning', bankid: false },
+                fritext: { behov: '', process: '', oversikt: '', bankid: false }
+            };
+
+            const handlingMap = {
+                kop: { phrase: 'göra ett köp på', desc: 'göra ett köp' },
+                overfora: { phrase: 'överföra', desc: 'överföra' },
+                betala: { phrase: 'betala', desc: 'betala' },
+                utlandsbetalning: { phrase: 'göra en utlandsbetalning på', desc: 'göra en utlandsbetalning' },
+                fritext: { phrase: '', desc: '' }
+            };
+
+           function updateDynamicFields() {
+                handlingFritext.style.display = handlingSelect.value === 'fritext' ? 'block' : 'none';
+
+                const isUtlands = handlingSelect.value === 'utlandsbetalning' || form.caseType.value === 'utlands';
+                sumInput.style.display = isUtlands ? 'none' : 'block';
+                sumUtland.style.display = isUtlands ? 'block' : 'none';
+                utlandsLand.style.display = isUtlands ? 'block' : 'none';
+
+                avseendeBilkop.style.display = avseendeSelect.value === 'bilkop' ? 'block' : 'none';
+                avseendeSpar.style.display = avseendeSelect.value === 'sparande' ? 'block' : 'none';
+                avseendeFritext.style.display = avseendeSelect.value === 'fritext' || (avseendeSelect.value === 'sparande' && avseendeSpar.value === 'Fritext') ? 'block' : 'none';
+
+                ursprungLonLank.style.display = ursprungSelect.value === 'lon' ? 'block' : 'none';
+                ursprungLanDetalj.style.display = ursprungSelect.value === 'lan' ? 'block' : 'none';
+                annatUnderlagLabel.style.display = ursprungSelect.value === 'annat' ? 'block' : 'none';
+
+                updateKycAvtal();
+            }
+
+            function updateKycAvtal() {
+                const type = form.caseType.value;
+                const info = typeMap[type];
+                kycText.value = `Finner syfte och art med ${info.process}. KYC ok.${info.bankid ? ' Gammalt BankID.' : ''}`;
+                avtalText.value = `Skickar avtal för DS avseende ${info.process}.`;
+            }
+
+            function renderOutputs() {
+                const type = form.caseType.value;
+                const handlingVal = handlingSelect.value;
+                const isUtlands = type === 'utlands' || handlingVal === 'utlandsbetalning';
+                const sum = isUtlands ? sumUtland.value : (sumInput.value || '0');
+                const land = utlandsLand.value;
+                const info = typeMap[type];
+
+                let handlingText = handlingMap[handlingVal].phrase;
+                let handlingDesc = handlingMap[handlingVal].desc;
+                if (handlingVal === 'fritext') {
+                    handlingText = handlingFritext.value.trim();
+                    handlingDesc = handlingText;
+                }
+
+                let avseendeText = '';
+                if (avseendeSelect.value === 'bilkop') {
+                    avseendeText = `ett bilköp (${avseendeBilkop.value})`;
+                } else if (avseendeSelect.value === 'sparande') {
+                    const val = avseendeSpar.value;
+                    if (val === 'Fritext') {
+                        avseendeText = `sparande i annat institut (${avseendeFritext.value})`;
+                    } else {
+                        avseendeText = `sparande i annat institut (${val})`;
+                    }
+                } else if (avseendeSelect.value === 'fritext') {
+                    avseendeText = avseendeFritext.value;
+                }
+
+                if (isUtlands && land) {
+                    avseendeText = avseendeText ? `${avseendeText} till ${land}` : `${land}`;
+                }
+
+                let ursprungText = '';
+                if (ursprungSelect.value === 'lon') {
+                    ursprungText = `eget sparande av lön (vilket går att följa i ${ursprungLonLank.value})`;
+                } else if (ursprungSelect.value === 'lan') {
+                    if (ursprungLanDetalj.value === 'skuldebrev') {
+                        ursprungText = 'ett lån (skuldebrev inskickat som underlag)';
+                    } else {
+                        ursprungText = 'ett lån (finns inget upprättat skuldebrev, men finner det rimligt utifrån kundens berättelse)';
+                    }
+                } else {
+                    ursprungText = `eget sparande i annat institut${annatUnderlag.checked ? ' (underlag inskickat)' : ''}`;
+                }
+
+                const sumText = isUtlands ? sum : `${sum} tkr`;
+                const handlingFull = handlingText ? `${handlingText} ${sumText}` : '';
+                const caseText = `Kund ska ${handlingFull} avseende ${avseendeText} och behöver således ${info.behov}.
+
+Pengarna kommer från ${ursprungText}.
+
+${kycText.value}
+
+${avtalText.value}`;
+                caseOutput.value = caseText;
+
+                const oversikt = `${info.oversikt} (${info.process} ${sumText})`;
+                const kommentar = `Hjälper kund ${handlingDesc} avseende ${avseendeText}. Pengarna kommer från ${ursprungText}.`;
+                activityOutput.value = `Översikt: ${oversikt}
+Kommentar: ${kommentar}`;
+            }
+
+            handlingSelect.addEventListener('change', updateDynamicFields);
+            form.querySelectorAll('input[name="caseType"]').forEach(r => r.addEventListener('change', updateDynamicFields));
+            avseendeSelect.addEventListener('change', updateDynamicFields);
+            avseendeSpar.addEventListener('change', updateDynamicFields);
+            ursprungSelect.addEventListener('change', updateDynamicFields);
+
+            document.getElementById('generateCase').addEventListener('click', () => {
+                renderOutputs();
+                const data = {
+                    caseType: form.caseType.value,
+                    handling: handlingSelect.value,
+                    handlingFritext: handlingFritext.value,
+                    summa: sumInput.value,
+                    summaUtland: sumUtland.value,
+                    utlandsLand: utlandsLand.value,
+                    avseende: avseendeSelect.value,
+                    avseendeBilkop: avseendeBilkop.value,
+                    avseendeSpar: avseendeSpar.value,
+                    avseendeFritext: avseendeFritext.value,
+                    ursprung: ursprungSelect.value,
+                    ursprungLonLank: ursprungLonLank.value,
+                    ursprungLanDetalj: ursprungLanDetalj.value,
+                    annatUnderlag: annatUnderlag.checked
+                };
+                setLocalStorage('ksCaseWizardDraft', data);
+            });
+
+            document.getElementById('copyCaseBtn').addEventListener('click', () => copyToClipboard('caseOutput'));
+            document.getElementById('copyActivityBtn').addEventListener('click', () => copyToClipboard('activityOutput'));
+
+            const draft = getLocalStorage('ksCaseWizardDraft', null);
+            if (draft) {
+                if (draft.caseType) {
+                    form.querySelector(`input[name="caseType"][value="${draft.caseType}"]`).checked = true;
+                }
+                handlingSelect.value = draft.handling || 'kop';
+                handlingFritext.value = draft.handlingFritext || '';
+                sumInput.value = draft.summa || '';
+                sumUtland.value = draft.summaUtland || '';
+                utlandsLand.value = draft.utlandsLand || '';
+                avseendeSelect.value = draft.avseende || '';
+                avseendeBilkop.value = draft.avseendeBilkop || 'från privatperson';
+                avseendeSpar.value = draft.avseendeSpar || 'Avanza';
+                avseendeFritext.value = draft.avseendeFritext || '';
+                ursprungSelect.value = draft.ursprung || 'lon';
+                ursprungLonLank.value = draft.ursprungLonLank || '';
+                ursprungLanDetalj.value = draft.ursprungLanDetalj || 'skuldebrev';
+                annatUnderlag.checked = draft.annatUnderlag || false;
+            }
+
+            updateDynamicFields();
+            renderOutputs();
+        }
+
+        function copyToClipboard(id) {
+            const text = document.getElementById(id).value;
+            navigator.clipboard.writeText(text).then(() => showToast('Text kopierad'));
+        }
         
         // ====================
         // INITIERING AV APPLIKATION
@@ -2965,6 +3338,7 @@
             await initDB();
             initTheme();
             initTabs();
+            initLoggTabs();
             initCallTabs();
             initStarRatings();
             initCallForm();
@@ -2972,6 +3346,7 @@
             initStatistics();
             initDataManagement();
             initSettings();
+            initArbetsstod();
 
             // Sätt initial data om den inte finns
             if (!getLocalStorage('ksGoals')) {
